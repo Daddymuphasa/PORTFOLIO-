@@ -12,21 +12,21 @@ export default function Experience() {
       <SectionHeading index="05" eyebrow="Trajectory" title="A path across AI, games, art and product." />
 
       <ol className="relative">
-        <span aria-hidden className="absolute left-[5px] top-2 h-[calc(100%-1rem)] w-px bg-line" />
+        <span aria-hidden className="absolute left-[5px] top-1 h-[calc(100%-1.75rem)] w-px bg-line" />
         {experience.map((job, i) => (
           <Reveal as="li" key={`${job.org}-${i}`} delay={0.05 * i}>
-            <div className="relative flex gap-6 pb-9 pl-8 last:pb-0">
-              <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border border-accent bg-background" />
-              <div className="flex-1">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h3 className="font-heading text-lg font-medium text-foreground">{job.role}</h3>
-                  <span className="font-mono text-xs text-muted">{job.period}</span>
-                </div>
-                <p className="mt-1 text-sm font-medium text-accent">{job.org}</p>
-                {job.note && (
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{job.note}</p>
-                )}
-              </div>
+            <div className="group relative flex flex-col gap-1.5 pb-10 pl-9 last:pb-0">
+              <span className="absolute left-0 top-[7px] h-2.5 w-2.5 rounded-full border border-accent bg-background transition-colors duration-300 group-hover:bg-accent" />
+              <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-subtle">
+                {job.period}
+              </span>
+              <h3 className="font-heading text-lg font-medium leading-snug text-foreground transition-colors group-hover:text-accent">
+                {job.role}
+              </h3>
+              <p className="text-sm font-medium text-accent">{job.org}</p>
+              {job.note && (
+                <p className="mt-0.5 text-sm leading-relaxed text-muted">{job.note}</p>
+              )}
             </div>
           </Reveal>
         ))}

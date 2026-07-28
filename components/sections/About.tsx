@@ -16,46 +16,54 @@ export default function About() {
       />
 
       <Reveal>
-        <p className="text-xl font-light leading-relaxed text-foreground/90 md:text-2xl md:leading-[1.5]">
+        <p className="max-w-2xl text-xl font-light leading-relaxed text-foreground/90 md:text-2xl md:leading-[1.5]">
           {about.summary}
         </p>
       </Reveal>
 
+      {/* At a glance — the essential facts, cleanly labelled */}
       <Reveal delay={0.1}>
-        <div className="mt-10 flex flex-wrap gap-x-8 gap-y-4 border-t border-line pt-8">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-              Full name
-            </p>
-            <p className="mt-1 font-heading text-sm text-foreground">
-              {profile.fullName}
-            </p>
-          </div>
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-              Based in
-            </p>
-            <p className="mt-1 font-heading text-sm text-foreground">
-              {profile.location}
-            </p>
-          </div>
-        </div>
+        <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-line pt-8 sm:grid-cols-4">
+          {[
+            { k: "Full name", v: profile.fullName },
+            { k: "Role", v: profile.title },
+            { k: "Based in", v: profile.location },
+            { k: "Company", v: "PAPAGEDON Labs" },
+          ].map((f) => (
+            <div key={f.k}>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+                {f.k}
+              </dt>
+              <dd className="mt-2 font-heading text-sm leading-snug text-foreground">
+                {f.v}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </Reveal>
 
-      <div className="mt-10">
-        {about.pillars.map((p, i) => (
-          <Reveal key={p.k} delay={0.05 * i}>
-            <div className="group border-t border-line py-5 last:border-b">
-              <div className="flex items-baseline justify-between gap-4">
-                <h3 className="font-heading text-lg font-medium text-foreground transition-colors group-hover:text-accent">
-                  {p.k}
-                </h3>
-                <span className="font-mono text-xs text-muted">0{i + 1}</span>
+      {/* What I do — the four pillars in an organised grid */}
+      <div className="mt-14">
+        <Reveal>
+          <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.24em] text-steel-soft">
+            What I do
+          </p>
+        </Reveal>
+        <div className="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
+          {about.pillars.map((p, i) => (
+            <Reveal key={p.k} delay={0.05 * i}>
+              <div className="group flex h-full flex-col bg-panel/20 p-5 transition-colors duration-300 hover:bg-panel/45">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="font-heading text-base font-medium text-foreground transition-colors group-hover:text-accent">
+                    {p.k}
+                  </h3>
+                  <span className="font-mono text-[11px] text-subtle">0{i + 1}</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{p.v}</p>
               </div>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{p.v}</p>
-            </div>
-          </Reveal>
-        ))}
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );
