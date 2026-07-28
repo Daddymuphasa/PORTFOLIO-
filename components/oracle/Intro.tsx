@@ -58,7 +58,7 @@ export default function Intro() {
           </a>
           <a
             href="#contact"
-            className="inline-flex items-center rounded-full border border-line px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-foreground/30"
+            className="glass inline-flex items-center rounded-full border border-foreground/15 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-foreground/30"
           >
             Get in touch
           </a>

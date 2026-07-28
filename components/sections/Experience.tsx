@@ -33,7 +33,7 @@ export default function Experience() {
       </ol>
 
       <Reveal>
-        <div className="mt-8 rounded-2xl border border-line bg-panel/40 p-6">
+        <div className="glass-card mt-8 rounded-2xl p-6">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-steel-soft">
             Education
           </p>

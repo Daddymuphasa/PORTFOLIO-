@@ -12,7 +12,7 @@ export default function Art() {
       <SectionHeading index="04" eyebrow="Digital Art" title="Where yesterday meets tomorrow." />
 
       <Reveal>
-        <figure className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line">
+        <figure className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-foreground/12 shadow-card ring-1 ring-inset ring-foreground/[0.06]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_118%,#183226_0%,#0b110e_60%)]" />
           <svg viewBox="0 0 400 250" className="absolute inset-0 h-full w-full" aria-hidden>
             <defs>

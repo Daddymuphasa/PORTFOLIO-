@@ -31,10 +31,10 @@ function Panel({
       transition={spring}
     >
       <div
-        className={`flex items-center gap-3 rounded-lg border px-3.5 py-2.5 backdrop-blur-md transition-colors duration-500 ${
+        className={`flex items-center gap-3 rounded-lg border px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(232,230,221,0.1)] backdrop-blur-md backdrop-saturate-150 transition-colors duration-500 ${
           active
-            ? "border-accent/60 bg-panel/85"
-            : "border-line bg-panel/45"
+            ? "border-accent/60 bg-panel/60"
+            : "border-foreground/10 bg-panel/25"
         }`}
       >
         {/* active indicator rail */}

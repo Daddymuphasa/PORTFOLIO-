@@ -32,7 +32,7 @@ export default function Projects() {
 
       {/* Flagship — PAPAGEDON */}
       <Reveal>
-        <article className="mb-5 rounded-2xl border border-accent/25 bg-panel/50 p-7 md:p-9">
+        <article className="glass-card mb-5 rounded-2xl border-accent/25 p-7 md:p-9">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <span className="eyebrow text-muted">{flagship.tag}</span>
             <Status status={flagship.status} />
@@ -56,7 +56,7 @@ export default function Projects() {
       <div className="grid gap-4 sm:grid-cols-2">
         {rest.map((p, i) => (
           <Reveal key={p.name} delay={0.06 * i}>
-            <article className="group flex h-full flex-col rounded-xl border border-line bg-panel/40 p-6 transition-colors duration-300 hover:border-accent/30 hover:bg-panel/70">
+            <article className="glass-card group flex h-full flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
               <div className="mb-4 flex items-center justify-between">
                 <span className="eyebrow text-muted">{p.tag}</span>
                 <Status status={p.status} />

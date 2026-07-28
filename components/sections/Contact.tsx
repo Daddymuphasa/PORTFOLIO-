@@ -30,7 +30,7 @@ export default function Contact() {
         </a>
       </Reveal>
 
-      <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
+      <div className="glass-card mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-line sm:grid-cols-3">
         {contact.links.map((link, i) => {
           const external = link.href.startsWith("http");
           return (
@@ -39,7 +39,7 @@ export default function Contact() {
                 href={link.href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="group flex h-full flex-col justify-between gap-5 bg-background p-5 transition-colors hover:bg-panel"
+                className="group flex h-full flex-col justify-between gap-5 bg-panel/20 p-5 transition-colors hover:bg-panel/50"
               >
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
                   {link.label}

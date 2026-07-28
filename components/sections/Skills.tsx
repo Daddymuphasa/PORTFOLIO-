@@ -18,7 +18,7 @@ export default function Skills() {
       <div className="grid gap-4 sm:grid-cols-2">
         {skills.map((group, i) => (
           <Reveal key={group.label} delay={0.05 * i}>
-            <div className="group h-full rounded-xl border border-line bg-panel/40 p-6 transition-colors duration-300 hover:border-accent/30 hover:bg-panel/70">
+            <div className="glass-card group h-full rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="font-heading text-base font-medium text-foreground">
                   {group.label}
