@@ -4,6 +4,7 @@ import { OracleProvider } from "./OracleContext";
 import OracleScene from "./OracleScene";
 import SectionTracker from "./SectionTracker";
 import Intro from "./Intro";
+import Music from "@/components/sections/Music";
 import About from "@/components/sections/About";
 import Skills from "@/components/sections/Skills";
 import Projects from "@/components/sections/Projects";
@@ -39,24 +40,27 @@ export default function OracleLayout() {
             <Intro />
           </SectionTracker>
           <SectionTracker index={1}>
-            <About />
+            <Music />
           </SectionTracker>
           <SectionTracker index={2}>
-            <Skills />
+            <About />
           </SectionTracker>
           <SectionTracker index={3}>
-            <Projects />
+            <Skills />
           </SectionTracker>
           <SectionTracker index={4}>
-            <Art />
+            <Projects />
           </SectionTracker>
           <SectionTracker index={5}>
-            <Experience />
+            <Art />
           </SectionTracker>
           <SectionTracker index={6}>
-            <Vision />
+            <Experience />
           </SectionTracker>
           <SectionTracker index={7}>
+            <Vision />
+          </SectionTracker>
+          <SectionTracker index={8}>
             <Contact />
           </SectionTracker>
         </div>

@@ -129,6 +129,18 @@ export const projects: Project[] = [
   },
 ];
 
+export const music = {
+  title: "CHAOS & ORDER",
+  status: "New Release",
+  tag: "Out Now",
+  cover: "/chaos-and-order.webp",
+  href: "https://audiomack.com/daddy-muphasa/song/chaosandor",
+  platform: "Audiomack",
+  description:
+    "My latest release — a sonic collision of chaos and order, of the sacred and the machine. Streaming now on Audiomack, with all major platforms to follow.",
+  note: "Coming to all platforms soon.",
+};
+
 export const art = {
   title: "Two Days Before Yesterday",
   award: "Onchain Summer Art Contest — Winner",
@@ -211,6 +223,7 @@ export const contact = {
 };
 
 export const nav = [
+  { label: "Music", href: "#music" },
   { label: "About", href: "#about" },
   { label: "Skills", href: "#skills" },
   { label: "Projects", href: "#projects" },
@@ -237,11 +250,12 @@ export type OracleSection = {
 };
 
 export const oracleSections: OracleSection[] = [
-  { index: 1, id: "about", label: "About", caption: "The Founder", x: 20, y: 40, look: -1 },
-  { index: 2, id: "skills", label: "Skills", caption: "Capabilities", x: 27, y: 17, look: -1 },
-  { index: 3, id: "projects", label: "Projects", caption: "Selected Work", x: 50, y: 8, look: 0 },
-  { index: 4, id: "art", label: "Art", caption: "Digital Art", x: 73, y: 17, look: 1 },
-  { index: 5, id: "experience", label: "Experience", caption: "Trajectory", x: 82, y: 41, look: 1 },
-  { index: 6, id: "vision", label: "Vision", caption: "The Future", x: 76, y: 66, look: 1 },
-  { index: 7, id: "contact", label: "Contact", caption: "Let's Talk", x: 22, y: 66, look: -1 },
+  { index: 1, id: "music", label: "Music", caption: "Now Playing", x: 50, y: 76, look: 0 },
+  { index: 2, id: "about", label: "About", caption: "The Founder", x: 20, y: 40, look: -1 },
+  { index: 3, id: "skills", label: "Skills", caption: "Capabilities", x: 27, y: 17, look: -1 },
+  { index: 4, id: "projects", label: "Projects", caption: "Selected Work", x: 50, y: 8, look: 0 },
+  { index: 5, id: "art", label: "Art", caption: "Digital Art", x: 73, y: 17, look: 1 },
+  { index: 6, id: "experience", label: "Experience", caption: "Trajectory", x: 82, y: 41, look: 1 },
+  { index: 7, id: "vision", label: "Vision", caption: "The Future", x: 76, y: 66, look: 1 },
+  { index: 8, id: "contact", label: "Contact", caption: "Let's Talk", x: 22, y: 66, look: -1 },
 ];
