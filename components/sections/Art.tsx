@@ -8,7 +8,7 @@ import { art } from "@/lib/data";
  */
 export default function Art() {
   return (
-    <section id="art" className="scroll-mt-28 py-20 md:py-28">
+    <section id="art" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading index="04" eyebrow="Digital Art" title="Where yesterday meets tomorrow." />
 
       <Reveal>
@@ -42,7 +42,7 @@ export default function Art() {
         </figure>
       </Reveal>
 
-      <div className="mt-8">
+      <div className="mt-10">
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/[0.06] px-4 py-2 text-sm text-accent">
             {art.award}

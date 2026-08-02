@@ -7,7 +7,7 @@ import { skills } from "@/lib/data";
  */
 export default function Skills() {
   return (
-    <section id="skills" className="scroll-mt-28 py-20 md:py-28">
+    <section id="skills" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading
         index="02"
         eyebrow="Capabilities"
@@ -15,10 +15,10 @@ export default function Skills() {
         lede="Five disciplines that rarely live in one person — combined to build things that feel new."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         {skills.map((group, i) => (
           <Reveal key={group.label} delay={0.05 * i}>
-            <div className="glass-card group h-full rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <div className="glass-card group h-full rounded-2xl p-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="font-heading text-base font-medium text-foreground">
                   {group.label}

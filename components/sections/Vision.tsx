@@ -6,7 +6,7 @@ import Reveal from "@/components/ui/Reveal";
  */
 export default function Vision() {
   return (
-    <section id="vision" className="scroll-mt-28 py-24 md:py-32">
+    <section id="vision" className="scroll-mt-28 py-28 md:py-44">
       <Reveal>
         <div className="mb-8 flex items-center gap-4">
           <span className="font-mono text-[11px] tracking-[0.24em] text-subtle">06</span>

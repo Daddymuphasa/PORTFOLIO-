@@ -22,7 +22,7 @@ export default function Projects() {
   const rest = projects.filter((p) => !p.flagship);
 
   return (
-    <section id="projects" className="scroll-mt-28 py-20 md:py-28">
+    <section id="projects" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading
         index="03"
         eyebrow="Selected Work"
@@ -32,7 +32,7 @@ export default function Projects() {
 
       {/* Flagship — PAPAGEDON */}
       <Reveal>
-        <article className="glass-card mb-5 rounded-2xl border-accent/25 p-7 md:p-9">
+        <article className="glass-card mb-6 rounded-2xl border-accent/25 p-8 md:p-10">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <span className="eyebrow text-muted">{flagship.tag}</span>
             <Status status={flagship.status} />
@@ -53,10 +53,10 @@ export default function Projects() {
       </Reveal>
 
       {/* Supporting projects */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         {rest.map((p, i) => (
           <Reveal key={p.name} delay={0.06 * i}>
-            <article className="glass-card group flex h-full flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
+            <article className="glass-card group flex h-full flex-col rounded-2xl p-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40">
               <div className="mb-4 flex items-center justify-between">
                 <span className="eyebrow text-muted">{p.tag}</span>
                 <Status status={p.status} />

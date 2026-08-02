@@ -14,7 +14,7 @@ type Props = {
 
 export default function SectionHeading({ index, eyebrow, title, lede }: Props) {
   return (
-    <div className="mb-10 md:mb-14">
+    <div className="mb-12 md:mb-16">
       <Reveal>
         <div className="mb-5 flex items-center gap-4">
           <span className="font-mono text-[11px] tracking-[0.24em] text-subtle">{index}</span>
@@ -29,7 +29,7 @@ export default function SectionHeading({ index, eyebrow, title, lede }: Props) {
       </Reveal>
       {lede && (
         <Reveal delay={0.16}>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted md:text-lg">
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted md:text-lg">
             {lede}
           </p>
         </Reveal>

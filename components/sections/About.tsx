@@ -8,7 +8,7 @@ import { about, profile } from "@/lib/data";
  */
 export default function About() {
   return (
-    <section id="about" className="scroll-mt-28 py-20 md:py-28">
+    <section id="about" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading
         index="01"
         eyebrow="About"
@@ -23,7 +23,7 @@ export default function About() {
 
       {/* At a glance — the essential facts, cleanly labelled */}
       <Reveal delay={0.1}>
-        <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-line pt-8 sm:grid-cols-4">
+        <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-7 border-t border-line pt-10 sm:grid-cols-4">
           {[
             { k: "Full name", v: profile.fullName },
             { k: "Role", v: profile.title },
@@ -43,7 +43,7 @@ export default function About() {
       </Reveal>
 
       {/* What I do — the four pillars in an organised grid */}
-      <div className="mt-14">
+      <div className="mt-16">
         <Reveal>
           <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.24em] text-steel-soft">
             What I do
@@ -52,7 +52,7 @@ export default function About() {
         <div className="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
           {about.pillars.map((p, i) => (
             <Reveal key={p.k} delay={0.05 * i}>
-              <div className="group flex h-full flex-col bg-panel/20 p-5 transition-colors duration-300 hover:bg-panel/45">
+              <div className="group flex h-full flex-col bg-panel/20 p-6 transition-colors duration-300 hover:bg-panel/45">
                 <div className="flex items-baseline justify-between gap-4">
                   <h3 className="font-heading text-base font-medium text-foreground transition-colors group-hover:text-accent">
                     {p.k}

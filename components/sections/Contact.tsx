@@ -7,7 +7,7 @@ import { contact } from "@/lib/data";
  */
 export default function Contact() {
   return (
-    <section id="contact" className="scroll-mt-28 py-20 md:py-28">
+    <section id="contact" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading
         index="07"
         eyebrow="Contact"
@@ -18,7 +18,7 @@ export default function Contact() {
       <Reveal>
         <a
           href={`mailto:${contact.email}`}
-          className="group flex flex-col gap-3 border-y border-line py-8 transition-colors hover:border-accent/40"
+          className="group flex flex-col gap-3 border-y border-line py-10 transition-colors hover:border-accent/40"
         >
           <span className="break-all font-heading text-2xl font-medium tracking-tight text-foreground transition-colors group-hover:text-accent md:text-3xl">
             {contact.email}
@@ -30,7 +30,7 @@ export default function Contact() {
         </a>
       </Reveal>
 
-      <div className="glass-card mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-line sm:grid-cols-3">
+      <div className="glass-card mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-3">
         {contact.links.map((link, i) => {
           const external = link.href.startsWith("http");
           return (

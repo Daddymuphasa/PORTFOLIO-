@@ -8,7 +8,7 @@ import { experience, education } from "@/lib/data";
  */
 export default function Experience() {
   return (
-    <section id="experience" className="scroll-mt-28 py-20 md:py-28">
+    <section id="experience" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading index="05" eyebrow="Trajectory" title="A path across AI, games, art and product." />
 
       <ol className="relative">
@@ -33,7 +33,7 @@ export default function Experience() {
       </ol>
 
       <Reveal>
-        <div className="glass-card mt-8 rounded-2xl p-6">
+        <div className="glass-card mt-12 rounded-2xl p-7">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-steel-soft">
             Education
           </p>
