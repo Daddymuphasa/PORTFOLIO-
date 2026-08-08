@@ -129,6 +129,13 @@ export const projects: Project[] = [
   },
 ];
 
+/** Early-access signup for the PAPAGEDON flagship. */
+export const waitlist = {
+  label: "Join the PAPAGEDON waitlist",
+  note: "Early access when the doors open.",
+  href: "https://docs.google.com/forms/d/e/1FAIpQLSetluu6OtlsXK8H421uugCBsp8NNNGchwhEUEyc8lvKIjRjoA/viewform",
+};
+
 export const music = {
   title: "CHAOS & ORDER",
   status: "New Release",
@@ -231,6 +238,25 @@ export const contact = {
     { label: "Audiomack", value: "daddy-muphasa", href: "https://audiomack.com/daddy-muphasa" },
     { label: "OpenSea", value: "PAPAGEDON", href: "https://opensea.io/collection/papagedon" },
   ] as ContactLink[],
+};
+
+/**
+ * Legal identity and policy metadata.
+ * `entity` is the name that appears in the copyright line and both policies —
+ * if PAPAGEDON Labs is registered with the CAC, add the RC number to `registration`.
+ */
+export const legal = {
+  entity: "PAPAGEDON Labs",
+  operator: "Adams-Okorie Testimony Oguchukwuluru",
+  registration: "",
+  jurisdiction: "Federal Republic of Nigeria",
+  venue: "Enugu State, Nigeria",
+  email: "papagedonlabs@gmail.com",
+  updated: "9 August 2026",
+  pages: [
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Use", href: "/terms" },
+  ],
 };
 
 export const nav = [

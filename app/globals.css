@@ -162,6 +162,45 @@
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Legal prose — privacy / terms                                      */
+/*  Hand-rolled instead of pulling in @tailwindcss/typography for two  */
+/*  pages. Scoped so it can never leak into the marketing sections.    */
+/* ------------------------------------------------------------------ */
+@layer components {
+  .legal-prose h2 {
+    @apply mt-12 font-heading text-xl font-semibold text-foreground md:text-2xl;
+  }
+
+  .legal-prose h2:first-child {
+    @apply mt-0;
+  }
+
+  .legal-prose h3 {
+    @apply mt-8 font-heading text-base font-semibold text-foreground/90;
+  }
+
+  .legal-prose p {
+    @apply mt-4 leading-relaxed text-muted;
+  }
+
+  .legal-prose ul {
+    @apply mt-4 space-y-2.5 pl-5;
+  }
+
+  .legal-prose li {
+    @apply list-disc leading-relaxed text-muted marker:text-accent/50;
+  }
+
+  .legal-prose a {
+    @apply text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent;
+  }
+
+  .legal-prose strong {
+    @apply font-medium text-foreground/90;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

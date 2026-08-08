@@ -1,6 +1,6 @@
 import SectionHeading from "@/components/ui/SectionHeading";
 import Reveal from "@/components/ui/Reveal";
-import { projects } from "@/lib/data";
+import { projects, waitlist } from "@/lib/data";
 
 /* Restrained status label, colour-keyed to lifecycle stage. */
 function Status({ status }: { status: string }) {
@@ -49,6 +49,18 @@ export default function Projects() {
               </li>
             ))}
           </ul>
+          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <a
+              href={waitlist.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2.5 rounded-full border border-accent/40 bg-accent/10 px-5 py-2.5 font-heading text-sm font-medium text-accent transition-colors hover:border-accent/60 hover:bg-accent/20"
+            >
+              {waitlist.label}
+              <span className="transition-transform duration-300 group-hover:translate-x-0.5">↗</span>
+            </a>
+            <span className="font-mono text-xs text-subtle">{waitlist.note}</span>
+          </div>
         </article>
       </Reveal>
 
