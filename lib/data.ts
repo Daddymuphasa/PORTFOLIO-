@@ -213,12 +213,23 @@ export const contact = {
       href: "https://www.linkedin.com/in/adams-okorie-testimony-a82a36255",
     },
     { label: "X", value: "@daddy_muphasa", href: "https://x.com/daddy_muphasa" },
-    { label: "Behance", value: "adamstestimony", href: "https://www.behance.net/adamstestimony" },
+    { label: "Instagram", value: "@daddy_muphasa", href: "https://instagram.com/daddy_muphasa" },
+    { label: "TikTok", value: "@daddy_muphasa", href: "https://tiktok.com/@daddy_muphasa" },
     {
       label: "YouTube",
       value: "Daddy MUPHASA",
       href: "https://www.youtube.com/channel/UClKzTUNoiGXumhjuwRWW6EQ",
     },
+    {
+      label: "Waitlist",
+      value: "Join PAPAGEDON",
+      href: "https://docs.google.com/forms/d/e/1FAIpQLSetluu6OtlsXK8H421uugCBsp8NNNGchwhEUEyc8lvKIjRjoA/viewform",
+    },
+    { label: "Telegram", value: "@daddymuphasa", href: "https://t.me/daddymuphasa" },
+    { label: "WhatsApp", value: "Message me", href: "https://wa.me/message/RNIQEPKTXQRWG1" },
+    { label: "Behance", value: "adamstestimony", href: "https://www.behance.net/adamstestimony" },
+    { label: "Audiomack", value: "daddy-muphasa", href: "https://audiomack.com/daddy-muphasa" },
+    { label: "OpenSea", value: "PAPAGEDON", href: "https://opensea.io/collection/papagedon" },
   ] as ContactLink[],
 };
 
