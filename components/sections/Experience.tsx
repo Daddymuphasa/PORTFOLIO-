@@ -9,7 +9,7 @@ import { experience, education } from "@/lib/data";
 export default function Experience() {
   return (
     <section id="experience" className="scroll-mt-28 py-24 md:py-36">
-      <SectionHeading index="05" eyebrow="Trajectory" title="A path across AI, games, art and product." />
+      <SectionHeading index="06" eyebrow="Trajectory" title="A path across AI, games, art and product." />
 
       <ol className="relative">
         <span aria-hidden className="absolute left-[5px] top-1 h-[calc(100%-1.75rem)] w-px bg-line" />

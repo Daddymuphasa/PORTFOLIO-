@@ -9,7 +9,7 @@ export default function Contact() {
   return (
     <section id="contact" className="scroll-mt-28 py-24 md:py-36">
       <SectionHeading
-        index="07"
+        index="08"
         eyebrow="Contact"
         title="Let's build something the world hasn't seen."
         lede="Open to conversations with investors, entertainment companies and strategic partners shaping what comes next."

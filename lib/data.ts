@@ -101,15 +101,6 @@ export const projects: Project[] = [
     tech: ["AI Systems", "Real-time 3D", "Generative Audio", "Interactive Media"],
   },
   {
-    name: "OBASED",
-    status: "Shipped",
-    tag: "Game",
-    summary: "Endless runner built in Unreal Engine, rebuilt in Unity.",
-    detail:
-      "A cross-engine endless runner featuring a reactive audio-visual system. Originally engineered in Unreal Engine, then fully re-implemented in Unity to master both pipelines.",
-    tech: ["Unreal Engine", "Unity", "Audio-Visual System", "Cross-Engine"],
-  },
-  {
     name: "Waka AI",
     status: "Live",
     tag: "AI Assistant",
@@ -129,11 +120,10 @@ export const projects: Project[] = [
   },
 ];
 
-/** Early-access signup for the PAPAGEDON flagship. */
+/** Early-access signup for the PAPAGEDON flagship — now closed. */
 export const waitlist = {
-  label: "Join the PAPAGEDON waitlist",
-  note: "Early access when the doors open.",
-  href: "https://docs.google.com/forms/d/e/1FAIpQLSetluu6OtlsXK8H421uugCBsp8NNNGchwhEUEyc8lvKIjRjoA/viewform",
+  label: "WAITLIST CLOSED",
+  note: "Sign-ups are no longer open.",
 };
 
 export const music = {
@@ -146,6 +136,18 @@ export const music = {
   description:
     "My latest release — a sonic collision of chaos and order, of the sacred and the machine. Streaming now on Audiomack, with all major platforms to follow.",
   note: "Coming to all platforms soon.",
+};
+
+/** OBASED — the game, given its own spotlight beat. */
+export const obased = {
+  title: "OBASED",
+  status: "Shipped",
+  tag: "Playable",
+  tagline: "Reality: hard mode.",
+  poster: "/obased-poster.webp",
+  description:
+    "A cross-engine endless runner with a reactive audio-visual system — you, a VR headset, and a bear that very much wants a word. Originally engineered in Unreal Engine, then fully re-implemented in Unity to master both pipelines.",
+  tech: ["Unreal Engine 5", "Unity", "VR", "Audio-Visual System", "Cross-Engine"],
 };
 
 export const art = {
@@ -227,11 +229,6 @@ export const contact = {
       value: "Daddy MUPHASA",
       href: "https://www.youtube.com/channel/UClKzTUNoiGXumhjuwRWW6EQ",
     },
-    {
-      label: "Waitlist",
-      value: "Join PAPAGEDON",
-      href: "https://docs.google.com/forms/d/e/1FAIpQLSetluu6OtlsXK8H421uugCBsp8NNNGchwhEUEyc8lvKIjRjoA/viewform",
-    },
     { label: "Telegram", value: "@daddymuphasa", href: "https://t.me/daddymuphasa" },
     { label: "WhatsApp", value: "Message me", href: "https://wa.me/message/RNIQEPKTXQRWG1" },
     { label: "Behance", value: "adamstestimony", href: "https://www.behance.net/adamstestimony" },
@@ -287,12 +284,13 @@ export type OracleSection = {
 };
 
 export const oracleSections: OracleSection[] = [
-  { index: 1, id: "music", label: "Music", caption: "Now Playing", x: 50, y: 76, look: 0 },
-  { index: 2, id: "about", label: "About", caption: "The Founder", x: 20, y: 40, look: -1 },
-  { index: 3, id: "skills", label: "Skills", caption: "Capabilities", x: 27, y: 17, look: -1 },
-  { index: 4, id: "projects", label: "Projects", caption: "Selected Work", x: 50, y: 8, look: 0 },
-  { index: 5, id: "art", label: "Art", caption: "Digital Art", x: 73, y: 17, look: 1 },
-  { index: 6, id: "experience", label: "Experience", caption: "Trajectory", x: 82, y: 41, look: 1 },
-  { index: 7, id: "vision", label: "Vision", caption: "The Future", x: 76, y: 66, look: 1 },
-  { index: 8, id: "contact", label: "Contact", caption: "Let's Talk", x: 22, y: 66, look: -1 },
+  { index: 1, id: "music", label: "Music", caption: "Now Playing", x: 51, y: 76, look: 0 },
+  { index: 2, id: "about", label: "About", caption: "The Founder", x: 20, y: 48, look: -1 },
+  { index: 3, id: "skills", label: "Skills", caption: "Capabilities", x: 24, y: 25, look: -1 },
+  { index: 4, id: "projects", label: "Projects", caption: "Selected Work", x: 40, y: 10, look: 0 },
+  { index: 5, id: "obased", label: "OBASED", caption: "The Game", x: 62, y: 10, look: 0 },
+  { index: 6, id: "art", label: "Art", caption: "Digital Art", x: 78, y: 25, look: 1 },
+  { index: 7, id: "experience", label: "Experience", caption: "Trajectory", x: 82, y: 48, look: 1 },
+  { index: 8, id: "vision", label: "Vision", caption: "The Future", x: 71, y: 68, look: 1 },
+  { index: 9, id: "contact", label: "Contact", caption: "Let's Talk", x: 31, y: 68, look: -1 },
 ];

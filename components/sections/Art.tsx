@@ -9,7 +9,7 @@ import { art } from "@/lib/data";
 export default function Art() {
   return (
     <section id="art" className="scroll-mt-28 py-24 md:py-36">
-      <SectionHeading index="04" eyebrow="Digital Art" title="Where yesterday meets tomorrow." />
+      <SectionHeading index="05" eyebrow="Digital Art" title="Where yesterday meets tomorrow." />
 
       <Reveal>
         <figure className="relative overflow-hidden rounded-2xl border border-foreground/12 shadow-card ring-1 ring-inset ring-foreground/[0.06]">

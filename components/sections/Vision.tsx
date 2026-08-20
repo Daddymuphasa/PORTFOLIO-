@@ -9,7 +9,7 @@ export default function Vision() {
     <section id="vision" className="scroll-mt-28 py-28 md:py-44">
       <Reveal>
         <div className="mb-8 flex items-center gap-4">
-          <span className="font-mono text-[11px] tracking-[0.24em] text-subtle">06</span>
+          <span className="font-mono text-[11px] tracking-[0.24em] text-subtle">07</span>
           <span className="h-px w-8 bg-steel/40" />
           <span className="eyebrow text-muted">Vision</span>
         </div>

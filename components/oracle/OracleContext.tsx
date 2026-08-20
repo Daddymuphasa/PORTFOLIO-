@@ -6,7 +6,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
  * Shares the currently-active section index between the scrolling content
  * (which reports what's in view) and the sticky Oracle scene (which reacts
  * by turning the nun and lighting the matching panel).
- * 0 = neutral intro state; 1..7 = the seven ring panels.
+ * 0 = neutral intro state; 1..9 = the nine ring panels.
  */
 type OracleCtx = {
   active: number;

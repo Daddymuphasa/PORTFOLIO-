@@ -8,6 +8,7 @@ import Music from "@/components/sections/Music";
 import About from "@/components/sections/About";
 import Skills from "@/components/sections/Skills";
 import Projects from "@/components/sections/Projects";
+import Obased from "@/components/sections/Obased";
 import Art from "@/components/sections/Art";
 import Experience from "@/components/sections/Experience";
 import Vision from "@/components/sections/Vision";
@@ -52,15 +53,18 @@ export default function OracleLayout() {
             <Projects />
           </SectionTracker>
           <SectionTracker index={5}>
-            <Art />
+            <Obased />
           </SectionTracker>
           <SectionTracker index={6}>
-            <Experience />
+            <Art />
           </SectionTracker>
           <SectionTracker index={7}>
-            <Vision />
+            <Experience />
           </SectionTracker>
           <SectionTracker index={8}>
+            <Vision />
+          </SectionTracker>
+          <SectionTracker index={9}>
             <Contact />
           </SectionTracker>
         </div>
