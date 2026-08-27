@@ -13,7 +13,7 @@ export default function MusicPage() {
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><Link href="/portfolio">PORTFOLIO ↗</Link></header>
     <div className="music-grid" aria-hidden />
     <section className="music-release">
-      <div className="release-cover"><img src="/chaos-and-order.png" alt="Chaos & Order cover art" /></div>
+      <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA PRESENTS</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">A transmission from the space between disorder and design. The new release is arriving now.</p>
         <div className="platforms">{platforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
         <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
