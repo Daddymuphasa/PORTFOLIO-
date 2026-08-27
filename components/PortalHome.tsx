@@ -36,7 +36,7 @@ export default function PortalHome() {
       </div>
       <div className="portal-wordmark"><span>DM</span> PAPAGEDON</div>
       <Link href="/music" className={`portal-side portal-music ${side === "music" ? "is-active" : ""}`} onMouseEnter={() => setSide("music")}>
-        <div className="portal-art" style={{ backgroundImage: "url('/portfolio-portal.png')" }} />
+        <div className="portal-art" style={{ backgroundImage: "url('/music-portal.webp')" }} />
         <div className="portal-shade" />
         <div className="portal-copy"><p>01 / EGWU 🎵</p><h1>MUSIC</h1><span>Enter the soundscape <b>→</b></span></div>
       </Link>
