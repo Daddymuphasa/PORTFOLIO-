@@ -126,17 +126,50 @@ export const waitlist = {
   note: "Sign-ups are no longer open.",
 };
 
-export const music = {
-  title: "CHAOS & ORDER",
-  status: "New Release",
-  tag: "Out Now",
-  cover: "/chaos-and-order.webp",
-  href: "https://audiomack.com/daddy-muphasa/song/chaosandor",
-  platform: "Audiomack",
-  description:
-    "My latest release — a sonic collision of chaos and order, of the sacred and the machine. Streaming now on Audiomack, with all major platforms to follow.",
-  note: "Coming to all platforms soon.",
+export type MusicRelease = {
+  title: string;
+  status: string;
+  tag: string;
+  cover: string;
+  href: string;
+  platform: string;
+  description: string;
+  note: string;
+  accent: string;
+  accentSoft: string;
 };
+
+export const musicReleases: MusicRelease[] = [
+  {
+    title: "CHAOS & ORDER",
+    status: "New Release",
+    tag: "Out Now",
+    cover: "/chaos-and-order.webp",
+    href: "https://audiomack.com/daddy-muphasa/song/chaosandor",
+    platform: "Audiomack",
+    description:
+      "A sonic collision of chaos and order, of the sacred and the machine. Out now on Audiomack.",
+    note: "Out now!",
+    accent: "#99f6a5",
+    accentSoft: "#c8ffd0",
+  },
+  {
+    title: "HOLY CLOUT",
+    status: "Upcoming Release",
+    tag: "Drops September 4",
+    cover: "/holy-clout.jpg",
+    href: "https://open.spotify.com/artist/1qEJkmdYVtBNlYOcUZJP7u",
+    platform: "Major Music Stores",
+    description:
+      "A sacred signal from Daddy MUPHASA. HOLY CLOUT arrives September 4 on all major music stores.",
+    note: "September 4 · All major stores",
+    accent: "#f5b52e",
+    accentSoft: "#ffe3a0",
+  },
+];
+
+/** The current release is kept as a convenience for any simple music previews. */
+export const music = musicReleases[0];
 
 /** OBASED — the game, given its own spotlight beat. */
 export const obased = {
