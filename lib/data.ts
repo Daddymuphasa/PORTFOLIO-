@@ -147,8 +147,7 @@ export const musicReleases: MusicRelease[] = [
     cover: "/chaos-and-order.webp",
     href: "https://audiomack.com/daddy-muphasa/song/chaosandor",
     platform: "Audiomack",
-    description:
-      "A sonic collision of chaos and order, of the sacred and the machine. Out now on Audiomack.",
+    description: "peace be still (Mark 4:39)",
     note: "Out now!",
     accent: "#99f6a5",
     accentSoft: "#c8ffd0",
