@@ -160,7 +160,7 @@ export const musicReleases: MusicRelease[] = [
     href: "https://open.spotify.com/track/4VblJpJMOhZoa0QorwWWkU?si=f4585149f84946f7",
     platform: "Spotify",
     description:
-      "The latest sacred signal from Daddy MUPHASA. Stream HOLY CLOUT wherever you listen.",
+      "in the beginning",
     note: "Out now · Four platforms",
     accent: "#f5b52e",
     accentSoft: "#ffe3a0",

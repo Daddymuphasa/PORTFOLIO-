@@ -35,7 +35,7 @@ export default function MusicPage() {
       <div className="holy-feature-copy">
         <p className="holy-feature-kicker"><span className="holy-live-dot" aria-hidden /> DADDY MUPHASA · OUT NOW</p>
         <h2 id="holy-feature-title">HOLY<br /><em>CLOUT</em></h2>
-        <p className="mt-4 max-w-xl text-sm leading-7 text-stone-300">The latest sacred signal from Daddy MUPHASA. Stream HOLY CLOUT wherever you listen.</p>
+        <p className="mt-4 max-w-xl text-sm leading-7 text-stone-300">in the beginning</p>
         <p className="mt-7 font-mono text-[9px] tracking-[.22em] text-stone-400">STREAM HOLY CLOUT</p>
         <div className="mt-2 grid max-w-xl gap-2 sm:grid-cols-2">
           {holyCloutPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}
