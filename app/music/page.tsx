@@ -18,6 +18,18 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><Link href="/portfolio">PORTFOLIO ↗</Link></header>
     <div className="music-grid" aria-hidden />
+    <section className="holy-feature" aria-labelledby="holy-feature-title">
+      <div className="holy-feature-glow" aria-hidden />
+      <div className="holy-feature-art"><img src="/holy-clout.jpg" alt="HOLY CLOUT cover art" /></div>
+      <div className="holy-feature-copy">
+        <p className="holy-feature-kicker"><span className="holy-live-dot" aria-hidden /> NEW RELEASE · OUT NOW</p>
+        <h1 id="holy-feature-title">HOLY<br /><em>CLOUT</em></h1>
+        <p>Daddy MUPHASA’s latest sacred signal is available everywhere.</p>
+        <div className="holy-feature-actions">
+          {holyCloutPlatforms.map(([name, , href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} <b>↗</b></a>)}
+        </div>
+      </div>
+    </section>
     <section className="music-release">
       <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
