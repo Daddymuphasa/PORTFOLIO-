@@ -241,3 +241,5 @@
 /* Apple Music uses a warm coral accent alongside the streaming-card system. */
 .platform.apple strong { color:#ff8e9e; }
 @media (max-width:700px) { .holy-feature { min-height:0; margin-top:2rem; grid-template-columns:1fr; gap:2rem; padding:1.5rem; }.holy-feature-art { width:min(76vw,330px); }.holy-feature h1 { font-size:clamp(4.5rem,20vw,7rem); }.holy-feature-actions { display:grid; grid-template-columns:1fr 1fr; }.holy-feature-actions a { padding:.75rem .65rem; font-size:9px; } }
+.holy-feature h2 { margin:.9rem 0 1.3rem; color:#ffe3a0; font-size:clamp(4.5rem,10vw,9rem); line-height:.76; letter-spacing:-.1em; }.holy-feature h2 em { color:#fff5d8; font-style:normal; }
+@media (max-width:700px) { .holy-feature h2 { font-size:clamp(4.5rem,20vw,7rem); } }

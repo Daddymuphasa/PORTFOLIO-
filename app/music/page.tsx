@@ -18,18 +18,6 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><Link href="/portfolio">PORTFOLIO ↗</Link></header>
     <div className="music-grid" aria-hidden />
-    <section className="holy-feature" aria-labelledby="holy-feature-title">
-      <div className="holy-feature-glow" aria-hidden />
-      <div className="holy-feature-art"><img src="/holy-clout.jpg" alt="HOLY CLOUT cover art" /></div>
-      <div className="holy-feature-copy">
-        <p className="holy-feature-kicker"><span className="holy-live-dot" aria-hidden /> NEW RELEASE · OUT NOW</p>
-        <h1 id="holy-feature-title">HOLY<br /><em>CLOUT</em></h1>
-        <p>Daddy MUPHASA’s latest sacred signal is available everywhere.</p>
-        <div className="holy-feature-actions">
-          {holyCloutPlatforms.map(([name, , href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} <b>↗</b></a>)}
-        </div>
-      </div>
-    </section>
     <section className="music-release">
       <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
@@ -38,14 +26,15 @@ export default function MusicPage() {
         <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
       </div>
     </section>
-    <section className="relative z-10 mx-auto grid max-w-5xl items-center gap-10 border-t border-amber-200/25 py-16 md:grid-cols-[220px_1fr]">
-      <div className="group relative">
+    <section className="holy-feature" aria-labelledby="holy-feature-title">
+      <div className="holy-feature-glow" aria-hidden />
+      <div className="holy-feature-art group relative">
         <div aria-hidden className="absolute -inset-5 rounded-full bg-amber-300/15 blur-3xl transition-opacity duration-500 group-hover:opacity-80" />
-        <img src="/holy-clout.jpg" alt="HOLY CLOUT cover art" className="relative aspect-square w-full max-w-[220px] border border-amber-200/40 object-cover shadow-[0_0_65px_rgba(245,181,46,.22)] transition-transform duration-500 group-hover:scale-[1.03]" />
+        <img src="/holy-clout.jpg" alt="HOLY CLOUT cover art" className="relative aspect-square w-full border border-amber-200/40 object-cover shadow-[0_0_65px_rgba(245,181,46,.22)] transition-transform duration-500 group-hover:scale-[1.03]" />
       </div>
-      <div>
-        <p className="font-mono text-[10px] tracking-[.24em] text-amber-200">DADDY MUPHASA · OUT NOW</p>
-        <h2 className="mt-3 font-heading text-5xl leading-none tracking-[-.06em] text-amber-200">HOLY CLOUT</h2>
+      <div className="holy-feature-copy">
+        <p className="holy-feature-kicker"><span className="holy-live-dot" aria-hidden /> DADDY MUPHASA · OUT NOW</p>
+        <h2 id="holy-feature-title">HOLY<br /><em>CLOUT</em></h2>
         <p className="mt-4 max-w-xl text-sm leading-7 text-stone-300">The latest sacred signal from Daddy MUPHASA. Stream HOLY CLOUT wherever you listen.</p>
         <p className="mt-7 font-mono text-[9px] tracking-[.22em] text-stone-400">STREAM HOLY CLOUT</p>
         <div className="mt-2 grid max-w-xl gap-2 sm:grid-cols-2">
