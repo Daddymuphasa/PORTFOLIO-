@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReleaseComments from "@/components/music/ReleaseComments";
 
 const platforms = [
   ["Spotify", "Listen to Chaos & Order", "https://open.spotify.com/album/6TtVMpCAZbdrjrKe5hhyxI?si=8VEhOoJ4TiWmt1bU5-DzrA", "spotify"],
@@ -26,6 +27,18 @@ export default function MusicPage() {
         <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
       </div>
     </section>
+    <section className="astronomy-feature" aria-labelledby="astronomy-title">
+      <div className="astronomy-stars" aria-hidden />
+      <div className="astronomy-art"><img src="/astronomy.jpg" alt="Astronomy EP cover art" /></div>
+      <div className="astronomy-copy">
+        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> NEXT TRANSMISSION · 16 SEPTEMBER 2026</p>
+        <h2 id="astronomy-title">ASTRONOMY</h2>
+        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
+        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
+        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
+      </div>
+    </section>
+    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
     <section className="holy-feature" aria-labelledby="holy-feature-title">
       <div className="holy-feature-glow" aria-hidden />
       <div className="holy-feature-art group relative">
@@ -43,5 +56,7 @@ export default function MusicPage() {
         <a href="https://open.spotify.com/artist/1qEJkmdYVtBNlYOcUZJP7u" target="_blank" rel="noreferrer" className="mt-6 inline-flex border border-amber-200/45 px-4 py-2 font-mono text-[10px] tracking-[.16em] text-amber-100 transition hover:bg-amber-200 hover:text-stone-950">FOLLOW DADDY MUPHASA ↗</a>
       </div>
     </section>
+    <ReleaseComments releaseId="holy-clout" releaseTitle="Holy Clout" />
+    <ReleaseComments releaseId="chaos-order" releaseTitle="Chaos & Order" />
   </main>;
 }
