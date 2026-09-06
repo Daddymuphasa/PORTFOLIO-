@@ -27,18 +27,7 @@ export default function MusicPage() {
         <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
       </div>
     </section>
-    <section className="astronomy-feature" aria-labelledby="astronomy-title">
-      <div className="astronomy-stars" aria-hidden />
-      <div className="astronomy-art"><img src="/astronomy.jpg" alt="Astronomy EP cover art" /></div>
-      <div className="astronomy-copy">
-        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> NEXT TRANSMISSION · 16 SEPTEMBER 2026</p>
-        <h2 id="astronomy-title">ASTRONOMY</h2>
-        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
-        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
-        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
-      </div>
-    </section>
-    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
+    <ReleaseComments releaseId="chaos-order" releaseTitle="Chaos & Order" />
     <section className="holy-feature" aria-labelledby="holy-feature-title">
       <div className="holy-feature-glow" aria-hidden />
       <div className="holy-feature-art group relative">
@@ -57,6 +46,17 @@ export default function MusicPage() {
       </div>
     </section>
     <ReleaseComments releaseId="holy-clout" releaseTitle="Holy Clout" />
-    <ReleaseComments releaseId="chaos-order" releaseTitle="Chaos & Order" />
+    <section className="astronomy-feature" aria-labelledby="astronomy-title">
+      <div className="astronomy-stars" aria-hidden />
+      <div className="astronomy-art"><img src="/astronomy.jpg" alt="Astronomy EP cover art" /></div>
+      <div className="astronomy-copy">
+        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> NEXT TRANSMISSION · 16 SEPTEMBER 2026</p>
+        <h2 id="astronomy-title">ASTRONOMY</h2>
+        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
+        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
+        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
+      </div>
+    </section>
+    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
   </main>;
 }
