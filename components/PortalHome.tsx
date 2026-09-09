@@ -22,6 +22,7 @@ export default function PortalHome() {
   };
 
   return (
+    <div className="home-stack">
     <main className="portal" onMouseLeave={() => setSide(null)} onTouchStart={(event) => {
       const touch = event.touches[0];
       swipeStart.current = { x: touch.clientX, y: touch.clientY };
@@ -48,7 +49,17 @@ export default function PortalHome() {
       </Link>
 
       <div className="portal-divider" aria-hidden><i /></div>
+      <a href="#app" className="portal-scroll">03 / APP ↓</a>
       <p className="portal-footer">© 2026 DADDY MUPHASA <span>•</span> EDEN 2077</p>
     </main>
+    <section id="app" className="portal-app">
+      <Link href="/app" className="portal-app-card">
+        <p>03 / UWA 🌐</p>
+        <h1>APP</h1>
+        <span>Enter the world <b>→</b></span>
+        <em>PAPAGEDON turns music into a world you can walk into.</em>
+      </Link>
+    </section>
+    </div>
   );
 }

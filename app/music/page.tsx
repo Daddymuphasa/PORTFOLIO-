@@ -17,7 +17,7 @@ const socials = [["TikTok profile", "https://www.tiktok.com/@daddy_muphasa?is_fr
 
 export default function MusicPage() {
   return <main className="music-page">
-    <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><Link href="/portfolio">PORTFOLIO ↗</Link></header>
+    <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
     <section className="music-release">
       <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
