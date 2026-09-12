@@ -5,14 +5,14 @@ import { legal } from "@/lib/data";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How PAPAGEDON Labs handles personal data collected through this site — no cookies, no analytics, no tracking.",
+    "How PAPAGEDON Labs handles personal data collected through this site — no cookies, no analytics, no tracking. The waitlist is closed.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalShell
       title="Privacy Policy"
-      intro="This site collects no personal data on its own. No cookies, no analytics, no tracking pixels. The only information we ever receive is what you deliberately send us."
+      intro="This site collects no personal data on its own. No cookies, no analytics, no tracking pixels. The PAPAGEDON waitlist is closed. The only information we ever receive is what you deliberately send us by email or message."
     >
       <h2>1. Who we are</h2>
       <p>
@@ -41,10 +41,11 @@ export default function PrivacyPage() {
       <h2>3. Information you choose to give us</h2>
       <ul>
         <li>
-          <strong>The PAPAGEDON waitlist.</strong> The waitlist form is hosted on Google
-          Forms. Whatever you enter — typically your name and email address — is stored
-          in Google&apos;s systems and shared with us. Google processes that data under
-          its own privacy policy, and your submission is also governed by it.
+          <strong>The PAPAGEDON waitlist.</strong> Sign-ups are closed. We no longer
+          collect waitlist submissions through this site. If you joined earlier through
+          the Google Form we used at the time, that entry is stored in Google&apos;s
+          systems and shared with us under Google&apos;s privacy policy. Ask us to delete
+          it and we will.
         </li>
         <li>
           <strong>Email, phone and messaging.</strong> If you write to us by email, call
@@ -52,26 +53,34 @@ export default function PrivacyPage() {
           receive the contents of your message and the account details attached to it.
           WhatsApp and Telegram are independent services with their own privacy terms.
         </li>
+        <li>
+          <strong>Listening-room notes.</strong> Notes you save on the music page stay in
+          your browser&apos;s local storage on this device. They are not sent to us, not
+          published to other visitors, and we cannot read them. Clearing your browser
+          data removes them.
+        </li>
       </ul>
 
       <h2>4. Why we hold it, and on what basis</h2>
       <p>
-        We use what you send us for one purpose: to reply to you, and — if you joined the
-        waitlist — to tell you when PAPAGEDON opens. Under the NDPA our lawful basis is
-        your consent, which you give by submitting the form or by contacting us, and our
-        legitimate interest in responding to enquiries about our work.
+        We use what you send us to reply to you, and — if you joined the waitlist before
+        it closed — to tell you when PAPAGEDON opens. Under the NDPA our lawful basis is
+        your consent, which you give by contacting us or by having submitted the form,
+        and our legitimate interest in responding to enquiries about our work.
       </p>
       <p>
         We do not sell personal data. We do not share it with advertisers, data brokers,
-        or anyone else, other than the service providers named above who process it on
-        our behalf so the form and the messages can work at all.
+        or anyone else, other than the messaging platforms named above who process it so
+        those conversations can work at all, and Google for any remaining waitlist
+        entries collected before sign-ups closed.
       </p>
 
       <h2>5. How long we keep it</h2>
       <p>
-        Waitlist entries are kept until PAPAGEDON launches and the announcement has gone
-        out, or until you ask us to remove you — whichever comes first. Correspondence is
-        kept for as long as it is useful to the conversation, and deleted when it is not.
+        Remaining waitlist entries are kept until PAPAGEDON launches and the announcement
+        has gone out, or until you ask us to remove you — whichever comes first.
+        Correspondence is kept for as long as it is useful to the conversation, and
+        deleted when it is not.
       </p>
 
       <h2>6. Your rights</h2>
@@ -90,9 +99,9 @@ export default function PrivacyPage() {
       <h2>7. Links to other sites</h2>
       <p>
         This site links out to GitHub, LinkedIn, X, Instagram, TikTok, YouTube, Telegram,
-        WhatsApp, Behance, Audiomack, OpenSea and Google Forms. Once you follow one of
-        those links you are on someone else&apos;s service, under their privacy policy and
-        their terms. We are not responsible for what they collect or how they use it.
+        WhatsApp, Behance, Audiomack and OpenSea. Once you follow one of those links you
+        are on someone else&apos;s service, under their privacy policy and their terms. We
+        are not responsible for what they collect or how they use it.
       </p>
 
       <h2>8. Children</h2>

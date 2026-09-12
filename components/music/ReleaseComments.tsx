@@ -17,46 +17,111 @@ const seedComments: Record<string, Comment[]> = {
   ],
 };
 
-function storageKey(releaseId: string) { return `papagedon-comments-${releaseId}`; }
+function storageKey(releaseId: string) {
+  return `papagedon-comments-${releaseId}`;
+}
+
+function isComment(value: unknown): value is Comment {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.id === "number" &&
+    Number.isFinite(item.id) &&
+    typeof item.name === "string" &&
+    typeof item.text === "string" &&
+    typeof item.date === "string"
+  );
+}
+
+function readStoredComments(releaseId: string): Comment[] {
+  try {
+    const raw = window.localStorage.getItem(storageKey(releaseId));
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isComment).map((item) => ({
+      id: item.id,
+      name: item.name.slice(0, 32),
+      text: item.text.slice(0, 280),
+      date: item.date.slice(0, 40),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredComments(releaseId: string, comments: Comment[]) {
+  try {
+    window.localStorage.setItem(storageKey(releaseId), JSON.stringify(comments));
+  } catch {
+    // Quota or private-mode failures should not break the page.
+  }
+}
 
 export default function ReleaseComments({ releaseId, releaseTitle }: { releaseId: string; releaseTitle: string }) {
-  const [comments, setComments] = useState<Comment[]>(seedComments[releaseId] ?? []);
+  const seeds = seedComments[releaseId] ?? [];
+  const [comments, setComments] = useState<Comment[]>(seeds);
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [posted, setPosted] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(storageKey(releaseId));
-    if (saved) setComments([...(seedComments[releaseId] ?? []), ...JSON.parse(saved)]);
+    const nextSeeds = seedComments[releaseId] ?? [];
+    const stored = readStoredComments(releaseId);
+    setComments(stored.length ? [...nextSeeds, ...stored] : nextSeeds);
   }, [releaseId]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!text.trim()) return;
-    const comment = { id: Date.now(), name: name.trim() || "Anonymous Orbit", text: text.trim(), date: "Just now" };
-    const saved = [comment, ...comments.filter((item) => !(seedComments[releaseId] ?? []).some((seed) => seed.id === item.id))];
+    const comment: Comment = {
+      id: Date.now(),
+      name: (name.trim() || "Anonymous Orbit").slice(0, 32),
+      text: text.trim().slice(0, 280),
+      date: "Just now",
+    };
+    const stored = [
+      comment,
+      ...comments.filter((item) => !seeds.some((seed) => seed.id === item.id)),
+    ];
     setComments([comment, ...comments]);
-    window.localStorage.setItem(storageKey(releaseId), JSON.stringify(saved));
-    setName(""); setText(""); setPosted(true);
+    writeStoredComments(releaseId, stored);
+    setName("");
+    setText("");
+    setPosted(true);
     window.setTimeout(() => setPosted(false), 2400);
   };
 
   return (
     <section className="release-comments" aria-labelledby={`${releaseId}-comments`}>
       <div className="comments-heading">
-        <div><p className="comments-kicker">THE LISTENING ROOM</p><h3 id={`${releaseId}-comments`}>What did {releaseTitle} leave with you?</h3></div>
+        <div>
+          <p className="comments-kicker">THE LISTENING ROOM</p>
+          <h3 id={`${releaseId}-comments`}>What did {releaseTitle} leave with you?</h3>
+        </div>
         <span className="comments-count">{comments.length} notes</span>
       </div>
       <div className="comments-layout">
         <form onSubmit={submit} className="comment-form">
-          <div className="form-row"><label htmlFor={`${releaseId}-name`}>Display name <span>optional</span></label><input id={`${releaseId}-name`} value={name} onChange={(event) => setName(event.target.value)} placeholder="Anonymous Orbit" maxLength={32} /></div>
+          <div className="form-row">
+            <label htmlFor={`${releaseId}-name`}>Display name <span>optional</span></label>
+            <input id={`${releaseId}-name`} value={name} onChange={(event) => setName(event.target.value)} placeholder="Anonymous Orbit" maxLength={32} />
+          </div>
           <label htmlFor={`${releaseId}-comment`}>Your experience</label>
           <textarea id={`${releaseId}-comment`} value={text} onChange={(event) => setText(event.target.value)} placeholder="Leave a signal for the next listener…" maxLength={280} required />
-          <div className="comment-submit"><span>Names are anonymous by default.</span><button type="submit">Post note ↗</button></div>
-          {posted && <p className="posted-message" role="status">Thank you for sharing your experience.</p>}
+          <div className="comment-submit">
+            <span>Saved on this device only. Other visitors cannot see it.</span>
+            <button type="submit">Save note ↗</button>
+          </div>
+          {posted && <p className="posted-message" role="status">Saved on this device. Thank you for the note.</p>}
         </form>
         <div className="comment-list" aria-live="polite">
-          {comments.map((comment) => <article className="comment" key={comment.id}><div className="comment-meta"><span>{comment.name}</span></div><p>{comment.text}</p></article>)}
+          {comments.map((comment) => (
+            <article className="comment" key={comment.id}>
+              <div className="comment-meta"><span>{comment.name}</span></div>
+              <p>{comment.text}</p>
+            </article>
+          ))}
         </div>
       </div>
     </section>

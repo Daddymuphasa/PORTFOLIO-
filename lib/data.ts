@@ -247,7 +247,7 @@ export const contact = {
     { label: "Email", value: "papagedonlabs@gmail.com", href: "mailto:papagedonlabs@gmail.com", primary: true },
     { label: "Phone", value: "+234 907 539 0376", href: "tel:+2349075390376" },
     { label: "Website", value: "papagedon.com", href: "https://papagedon.com" },
-    { label: "GitHub", value: "Daddymuphas", href: "https://github.com/Daddymuphas" },
+    { label: "GitHub", value: "Daddymuphasa", href: "https://github.com/Daddymuphasa" },
     {
       label: "LinkedIn",
       value: "Adams-Okorie Testimony",
@@ -281,7 +281,7 @@ export const legal = {
   jurisdiction: "Federal Republic of Nigeria",
   venue: "Enugu State, Nigeria",
   email: "papagedonlabs@gmail.com",
-  updated: "9 August 2026",
+  updated: "7 September 2026",
   pages: [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Use", href: "/terms" },

@@ -76,14 +76,14 @@ export default function TermsPage() {
       <p>
         Nothing on this site is an offer to sell or a solicitation to buy any security,
         token or digital asset, an offer of investment, or financial, legal or
-        professional advice. Joining the waitlist creates no contract and reserves no
-        product. Any actual engagement, investment or purchase would be governed by a
-        separate signed agreement.
+        professional advice. The waitlist is closed. Any earlier sign-up created no
+        contract and reserved no product. Any actual engagement, investment or purchase
+        would be governed by a separate signed agreement.
       </p>
 
       <h2>6. Third-party links and platforms</h2>
       <p>
-        Links to external services — social platforms, streaming, marketplaces, forms —
+        Links to external services — social platforms, streaming and marketplaces —
         are provided for convenience. We do not control those services, do not endorse
         their content by linking, and are not responsible for them. Anything you buy,
         mint, stream or submit on another platform is between you and that platform.

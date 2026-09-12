@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ReleaseComments from "@/components/music/ReleaseComments";
+import AstronomySlideshow from "@/components/music/AstronomySlideshow";
 
 const platforms = [
   ["Spotify", "Listen to Chaos & Order", "https://open.spotify.com/album/6TtVMpCAZbdrjrKe5hhyxI?si=8VEhOoJ4TiWmt1bU5-DzrA", "spotify"],
@@ -19,6 +20,20 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
+    <section className="astronomy-feature" aria-labelledby="astronomy-title">
+      <div className="astronomy-stars" aria-hidden />
+      <AstronomySlideshow />
+      <div className="astronomy-copy">
+        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> FIRST TRANSMISSION · 16 SEPTEMBER 2026</p>
+        <h2 id="astronomy-title">ASTRONOMY</h2>
+        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
+        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
+        <p className="platforms-label astronomy-platform-label">PRE-SAVE ON YOUR PLATFORM</p>
+        <div className="platforms astronomy-platforms"><a className="platform presave" href="https://ditto.fm/astronomy-daddy-muphasa" target="_blank" rel="noreferrer"><strong>Ditto Music</strong><span>Pre-save Astronomy</span><b>↗</b></a></div>
+        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
+      </div>
+    </section>
+    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
     <section className="music-release">
       <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
@@ -46,17 +61,6 @@ export default function MusicPage() {
       </div>
     </section>
     <ReleaseComments releaseId="holy-clout" releaseTitle="Holy Clout" />
-    <section className="astronomy-feature" aria-labelledby="astronomy-title">
-      <div className="astronomy-stars" aria-hidden />
-      <div className="astronomy-art"><img src="/astronomy.jpg" alt="Astronomy EP cover art" /></div>
-      <div className="astronomy-copy">
-        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> NEXT TRANSMISSION · 16 SEPTEMBER 2026</p>
-        <h2 id="astronomy-title">ASTRONOMY</h2>
-        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
-        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
-        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
-      </div>
-    </section>
-    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
   </main>;
 }
+
