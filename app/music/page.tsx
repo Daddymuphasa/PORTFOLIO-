@@ -33,7 +33,11 @@ export default function MusicPage() {
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
     <section className="music-release">
-      <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
+      <div className="release-cover matrix-panel">
+        <div className="matrix-rain" aria-hidden>{Array.from({ length: 18 }, (_, index) => <span key={index}>01 ᛉ 10 ∴ 11 ◇ 00 ᚠ 01 10</span>)}</div>
+        <div className="matrix-seal" aria-hidden>✦</div>
+        <img src="/chaos-and-order.webp" alt="Chaos & Order cover art" />
+      </div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
         <p className="platforms-label">STREAM THE NEW SINGLE</p>
         <div className="platforms">{platforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
