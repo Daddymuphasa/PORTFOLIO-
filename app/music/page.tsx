@@ -1,5 +1,4 @@
 import Link from "next/link";
-import ReleaseComments from "@/components/music/ReleaseComments";
 import AstronomySlideshow from "@/components/music/AstronomySlideshow";
 
 const platforms = [
@@ -33,20 +32,6 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
-    <section className="astronomy-feature" aria-labelledby="astronomy-title">
-      <div className="astronomy-stars" aria-hidden />
-      <AstronomySlideshow />
-      <div className="astronomy-copy">
-        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> OUT NOW · ALL PLATFORMS</p>
-        <h2 id="astronomy-title">ASTRONOMY</h2>
-        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
-        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
-        <p className="platforms-label astronomy-platform-label">STREAM ASTRONOMY</p>
-        <div className="platforms astronomy-platforms">{astronomyPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
-        <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
-      </div>
-    </section>
-    <ReleaseComments releaseId="astronomy" releaseTitle="Astronomy" />
     <section className="music-release">
       <div className="release-cover"><img src="/chaos-and-order.webp" alt="Chaos & Order cover art" /></div>
       <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
@@ -55,7 +40,6 @@ export default function MusicPage() {
         <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
       </div>
     </section>
-    <ReleaseComments releaseId="chaos-order" releaseTitle="Chaos & Order" />
     <section className="holy-feature" aria-labelledby="holy-feature-title">
       <div className="holy-feature-glow" aria-hidden />
       <div className="holy-feature-art group relative">
@@ -73,7 +57,18 @@ export default function MusicPage() {
         <a href="https://open.spotify.com/artist/1qEJkmdYVtBNlYOcUZJP7u" target="_blank" rel="noreferrer" className="mt-6 inline-flex border border-amber-200/45 px-4 py-2 font-mono text-[10px] tracking-[.16em] text-amber-100 transition hover:bg-amber-200 hover:text-stone-950">FOLLOW DADDY MUPHASA ↗</a>
       </div>
     </section>
-    <ReleaseComments releaseId="holy-clout" releaseTitle="Holy Clout" />
+    <section className="astronomy-feature" aria-labelledby="astronomy-title">
+      <div className="astronomy-stars" aria-hidden />
+      <AstronomySlideshow />
+      <div className="astronomy-copy">
+        <p className="astronomy-kicker"><span className="astronomy-dot" aria-hidden /> OUT NOW · ALL PLATFORMS</p>
+        <h2 id="astronomy-title">ASTRONOMY</h2>
+        <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
+        <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
+        <p className="platforms-label astronomy-platform-label">STREAM ASTRONOMY</p>
+        <div className="platforms astronomy-platforms">{astronomyPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
+      </div>
+    </section>
   </main>;
 }
 
