@@ -14,6 +14,19 @@ const holyCloutPlatforms = [
   ["Audiomack", "Stream HOLY CLOUT", "https://audiomack.com/daddy-muphasa/song/holyclout-mix", "audiomack"],
   ["YouTube Music", "Stream HOLY CLOUT", "https://music.youtube.com/watch?v=I7DjX3A-YFw&si=lRMw-ZcVXcb-qVYf", "youtube"],
 ];
+const astronomyPlatforms = [
+  ["Spotify", "Stream ASTRONOMY", "https://open.spotify.com/album/61o20uj4hDloJTZGRFUvcg?1011ljwEH", "spotify"],
+  ["Apple Music", "Stream ASTRONOMY", "https://geo.music.apple.com/ng/album/astronomy-ep/1512705600?app=music&ls=1&ct=FFM_ff31c482646e618104722214be57e0e9&at=1001loWk", "apple"],
+  ["YouTube", "Stream ASTRONOMY", "https://www.youtube.com/playlist?list=OLAK5uy_kZrEhxaNg6PDjCGn8r3ZGxnIratc6fh80&src=FFM&lid=00000000-6aa4-ef20-3000-000d0099b4cd&cid=eef267f6-3f51-5d46-a717-711ac12bcf76", "youtube"],
+  ["YouTube Music", "Stream ASTRONOMY", "https://music.youtube.com/playlist?list=OLAK5uy_kZrEhxaNg6PDjCGn8r3ZGxnIratc6fh80&src=FFM&lid=00000000-6aa4-ef20-3000-000d0099b4cd&cid=eef267f6-3f51-5d46-a717-711ac12bcf76", "youtube"],
+  ["iTunes", "Download ASTRONOMY", "https://geo.itunes.apple.com/ng/album/astronomy-ep/1512705600?app=itunes&ls=1&ct=FFM_4976f3c811be619ca8cb15daf301c502&at=1001loWk", "apple"],
+  ["Deezer", "Stream ASTRONOMY", "https://www.deezer.com/album/1076960472", "deezer"],
+  ["TIDAL", "Stream ASTRONOMY", "https://www.tidal.com/album/560625566", "tidal"],
+  ["SoundCloud", "Stream ASTRONOMY", "https://soundcloud.com/daddymuphasa-music/sets/astronomy-135858572", "soundcloud"],
+  ["Amazon Music", "Stream ASTRONOMY", "https://music.amazon.com/albums/B0HJLKVJW6", "amazon"],
+  ["KKBOX", "Stream ASTRONOMY", "https://www.kkbox.com/tw/tc/album/GtPr-0j-Pnece9TZff", "kkbox"],
+  ["iHeartRadio", "Play ASTRONOMY", "https://www.iheart.com/artist/34081444/albums/107209217/", "iheartradio"],
+];
 const socials = [["TikTok profile", "https://www.tiktok.com/@daddy_muphasa?is_from_webapp=1&sender_device=pc"], ["Use the sound on TikTok", "https://vt.tiktok.com/ZS9Bn6rx4UhS8-egAIy/"], ["Instagram", "https://www.instagram.com/daddy_muphasa?utm_medium=copy_link"], ["X / Twitter", "https://x.com/daddy_muphasa"]];
 
 export default function MusicPage() {
@@ -29,7 +42,7 @@ export default function MusicPage() {
         <p className="astronomy-description">The re-release is coming back into orbit. A project for late nights, long distances, and anyone still searching for a signal.</p>
         <div className="astronomy-date"><span>DROPPING</span><strong>16.09.26</strong><small>ALL PLATFORMS</small></div>
         <p className="platforms-label astronomy-platform-label">STREAM ASTRONOMY</p>
-        <div className="platforms astronomy-platforms"><a className="platform presave" href="https://ditto.fm/astronomy-daddy-muphasa" target="_blank" rel="noreferrer"><strong>All platforms</strong><span>Listen via Ditto Music</span><b>↗</b></a></div>
+        <div className="platforms astronomy-platforms">{astronomyPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
         <a href="#astronomy-comments" className="astronomy-cta">LEAVE A MESSAGE FOR THE DROP ↓</a>
       </div>
     </section>
