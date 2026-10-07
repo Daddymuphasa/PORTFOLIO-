@@ -1,0 +1,23 @@
+const registration = {
+  type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  name: "PAPAGEDON AEI",
+  description: "Audio Experience Intelligence as a service by CREA8 STUDIOS (Nigeria). Agents and builders send audio and receive deterministic audio features (tempo, beats, energy, silence, spectral) and AEI Experience Signals. Pay per call in USDC or USDT on Celo via x402.",
+  image: "https://www.papagedon.com/papagedon-logo.png",
+  services: [
+    { name: "agent", endpoint: "https://www.papagedon.com/app" },
+    { name: "web", endpoint: "https://www.papagedon.com/app" },
+    { name: "A2A", endpoint: "https://www.papagedon.com/app/.well-known/agent-card.json", version: "0.3.0" },
+  ],
+  x402Support: true,
+  active: true,
+  supportedTrust: ["reputation"],
+};
+
+export function GET() {
+  return new Response(JSON.stringify(registration, null, 2), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+    },
+  });
+}
