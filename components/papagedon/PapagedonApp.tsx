@@ -21,9 +21,11 @@ import { ASSET_BASE, catalog, type PackDef, type ThemeDef } from "@/lib/papagedo
 import { Web3Provider } from "./Web3Provider";
 import WalletButton from "./WalletButton";
 import PaidCallPanel, { type IdentityStatus } from "./PaidCallPanel";
+import { encodeWavMono16 } from "@/lib/aei/wav";
 
 const DEMO_CYCLE_SECONDS = 20; // PAPAGEDON_DEMO_CYCLE in Runtime.cpp
 const LIVE_CLIP_SECONDS = 8;
+const FILE_CLIP_SECONDS = 20; // ~1.9 MB at 48 kHz: well under the gateway's 4 MB limit
 
 const themeById = (id: string | null | undefined): ThemeDef | undefined => catalog.themes.find((t) => t.id === id);
 const defaultPack = catalog.packs.find((p) => p.id === "SignaturePack") ?? catalog.packs[0];
@@ -219,12 +221,21 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
     setPlaying(a.playing);
   };
 
+  // The paid AEI call sends a WAV clip of what is playing: the gateway reads
+  // WAV only, so every source (any file format, mic, system audio) is decoded
+  // here and the server analyses exactly these samples.
   const getClip = useCallback(async () => {
     const a = audioRef.current;
     if (!a?.kind) return null;
-    if (a.kind === "file" && a.file) return { blob: a.file as Blob, name: a.file.name };
-    const blob = await a.recordClip(LIVE_CLIP_SECONDS);
-    return { blob, name: `papagedon-live-${Date.now()}.webm` };
+    const { samples, sampleRate, startSeconds } = await a.captureClip(FILE_CLIP_SECONDS, LIVE_CLIP_SECONDS);
+    const wav = encodeWavMono16(samples, sampleRate);
+    const seconds = samples.length / sampleRate;
+    const at = `${Math.floor(startSeconds / 60)}:${String(Math.floor(startSeconds % 60)).padStart(2, "0")}`;
+    const label =
+      a.kind === "file"
+        ? `${seconds.toFixed(1)} s of ${a.label} from ${at}`
+        : `${seconds.toFixed(1)} s recorded live`;
+    return { blob: new Blob([wav], { type: "audio/wav" }), name: `papagedon-${a.kind}-clip.wav`, label: `${label} · ${(wav.byteLength / 1e6).toFixed(1)} MB WAV` };
   }, []);
 
   useEffect(() => () => void audioRef.current?.close(), []);

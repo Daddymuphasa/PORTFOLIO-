@@ -11,7 +11,7 @@
     "stateTransitionHistory": false
   },
   "defaultInputModes": [
-    "audio/*"
+    "audio/wav"
   ],
   "defaultOutputModes": [
     "application/json"
