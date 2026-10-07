@@ -13,6 +13,9 @@ const registration = {
   supportedTrust: ["reputation"],
 };
 
+// Next 15 made GET route handlers dynamic by default; this file never changes per request.
+export const dynamic = "force-static";
+
 export function GET() {
   return new Response(JSON.stringify(registration, null, 2), {
     headers: {

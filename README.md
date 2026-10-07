@@ -10,7 +10,7 @@ The hero is a fixed portrait of the founder as a digital oracle, seated amid a r
 
 ## Stack
 
-- **Next.js 14** (App Router)
+- **Next.js 15** (App Router, React 19)
 - **React 18** + **TypeScript**
 - **Tailwind CSS** — centralised design system
 - **Framer Motion** — section reveals, the scroll-synced Oracle, spring-based turning
