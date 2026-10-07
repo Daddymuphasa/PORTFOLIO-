@@ -2,7 +2,7 @@
   "protocolVersion": "0.3.0",
   "name": "PAPAGEDON AEI",
   "description": "Audio Experience Intelligence by Daddy Mufasa of Papageddon Labs.",
-  "url": "https://www.papagedon.com",
+  "url": "https://papagedon.com",
   "preferredTransport": "HTTP+JSON",
   "version": "0.3.0",
   "capabilities": {
