@@ -1,0 +1,41 @@
+{
+  "protocolVersion": "0.3.0",
+  "name": "PAPAGEDON AEI",
+  "description": "Audio Experience Intelligence by Daddy Mufasa of Papageddon Labs.",
+  "url": "https://www.papagedon.com",
+  "preferredTransport": "HTTP+JSON",
+  "version": "0.3.0",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "audio/*"
+  ],
+  "defaultOutputModes": [
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "audio-experience-intelligence",
+      "name": "Audio analysis",
+      "description": "Analyzes submitted audio and returns deterministic tempo, beats, energy, silence, and spectral features with AEI Experience Signals. Paid per call in USDC or USDT on Celo via x402.",
+      "tags": [
+        "audio analysis",
+        "tempo",
+        "beats",
+        "energy",
+        "silence",
+        "spectral features",
+        "x402",
+        "Celo",
+        "USDC",
+        "USDT"
+      ],
+      "examples": [
+        "Analyze this audio and return tempo, beat timing, energy, silence, and spectral features."
+      ]
+    }
+  ]
+}
