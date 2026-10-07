@@ -18,6 +18,7 @@
  * does with its audio clock.
  */
 import { AudioAnalyzer, type AudioFrame } from "./analyzer";
+import { downmixToMono as mix } from "../aei/wav";
 
 export type AudioSourceKind = "file" | "input" | "loopback";
 
@@ -163,9 +164,38 @@ export class AudioEngine {
     });
   }
 
+  /** Play position of the loaded file in seconds (0 when no file). */
+  filePosition(): number {
+    const d = this.fileBuffer?.duration ?? 0;
+    if (!d) return 0;
+    const p = this.playing ? this.ctx.currentTime - this.fileStartedAt : this.fileOffset;
+    return ((p % d) + d) % d;
+  }
+
   /**
-   * Records `seconds` of the live source into a clip that can be sent to the
-   * paid AEI gateway. File mode sends the file itself instead.
+   * A mono PCM clip of what PAPAGEDON is hearing, for the paid AEI gateway.
+   * File mode: `fileSeconds` of the decoded track from the play position (or
+   * the last `fileSeconds` when near the end). Live modes: `liveSeconds`
+   * recorded from the source, then decoded. The caller encodes it as WAV, the
+   * gateway's input format, so the server analyses exactly these samples.
+   */
+  async captureClip(fileSeconds: number, liveSeconds: number): Promise<{ samples: Float32Array; sampleRate: number; startSeconds: number }> {
+    if (this.kind === "file" && this.fileBuffer) {
+      const b = this.fileBuffer;
+      const len = Math.min(b.length, Math.round(fileSeconds * b.sampleRate));
+      const start = Math.min(Math.round(this.filePosition() * b.sampleRate), b.length - len);
+      const channels = Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c).subarray(start, start + len));
+      return { samples: mix(channels), sampleRate: b.sampleRate, startSeconds: start / b.sampleRate };
+    }
+    const blob = await this.recordClip(liveSeconds);
+    const b = await this.ctx.decodeAudioData(await blob.arrayBuffer());
+    const channels = Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c));
+    return { samples: mix(channels), sampleRate: b.sampleRate, startSeconds: 0 };
+  }
+
+  /**
+   * Records `seconds` of the live source (MediaRecorder, so webm/opus or mp4);
+   * captureClip() decodes it to PCM before it is sent.
    */
   async recordClip(seconds: number): Promise<Blob> {
     if (!this.stream) throw new Error("No live source to record.");
