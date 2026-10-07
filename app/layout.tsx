@@ -30,6 +30,7 @@ const SITE_URL = "https://papagedon.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: { icon: "/papagedon-logo.png", apple: "/papagedon-logo.png" },
   title: {
     default: "Daddy MUPHASA — Creative Technologist",
     template: "%s · Daddy MUPHASA",

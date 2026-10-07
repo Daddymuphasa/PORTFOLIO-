@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AstronomySlideshow from "@/components/music/AstronomySlideshow";
+import BrandLogo from "@/components/BrandLogo";
 
 const platforms = [
   ["Spotify", "Listen to Chaos & Order", "https://open.spotify.com/album/6TtVMpCAZbdrjrKe5hhyxI?si=8VEhOoJ4TiWmt1bU5-DzrA", "spotify"],
@@ -30,7 +31,7 @@ const socials = [["TikTok profile", "https://www.tiktok.com/@daddy_muphasa?is_fr
 
 export default function MusicPage() {
   return <main className="music-page">
-    <header className="music-nav"><Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
+    <header className="music-nav"><Link href="/" className="music-mark"><BrandLogo compact /></Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
     <section className="music-release">
       <div className="release-cover matrix-panel">

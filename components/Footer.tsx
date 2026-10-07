@@ -1,4 +1,5 @@
 import { profile, nav, legal } from "@/lib/data";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -9,12 +10,7 @@ export default function Footer() {
           {/* Identity */}
           <div className="max-w-sm">
             <a href="/#top" className="inline-flex items-center gap-2.5">
-              <span className="grid h-8 w-8 place-items-center rounded-md border border-accent/30 font-heading text-sm font-bold text-accent">
-                DM
-              </span>
-              <span className="font-heading text-sm font-medium text-foreground">
-                Daddy MUPHASA
-              </span>
+              <BrandLogo />
             </a>
             <p className="mt-4 text-sm leading-relaxed text-muted">
               {profile.vision}

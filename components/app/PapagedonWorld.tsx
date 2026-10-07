@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 
 const VERT = `
 attribute vec2 a;
@@ -217,7 +218,7 @@ export default function PapagedonWorld() {
     >
       <canvas ref={canvasRef} />
       <header className="pg-app-nav">
-        <Link href="/" className="music-mark"><span>DM</span> PAPAGEDON</Link>
+        <Link href="/" className="music-mark"><BrandLogo compact /></Link>
         <span style={{ display: "flex", gap: "1.4rem" }}>
           <Link href="/music">MUSIC ↗</Link>
           <Link href="/portfolio">PORTFOLIO ↗</Link>

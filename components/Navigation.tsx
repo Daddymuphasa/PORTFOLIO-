@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { nav } from "@/lib/data";
+import BrandLogo from "@/components/BrandLogo";
 
 /**
  * Floating navigation.
@@ -48,12 +49,7 @@ export default function Navigation() {
             className="group flex items-center gap-2.5"
             aria-label="Daddy MUPHASA — home"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-md border border-accent/30 font-heading text-sm font-bold text-accent transition-colors group-hover:bg-accent group-hover:text-background">
-              DM
-            </span>
-            <span className="hidden font-heading text-sm font-medium tracking-tight text-foreground sm:block">
-              Daddy MUPHASA
-            </span>
+            <BrandLogo />
           </a>
 
           {/* Desktop links */}
