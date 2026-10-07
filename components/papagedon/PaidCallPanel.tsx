@@ -21,7 +21,7 @@ export type IdentityStatus = {
   checkedAt: string | null;
 };
 
-type Clip = { blob: Blob; name: string };
+type Clip = { blob: Blob; name: string; label?: string };
 
 const STAGE_LABEL: Record<PaidCallStep["stage"], string> = {
   requesting: "Calling gateway…",
@@ -61,6 +61,7 @@ export default function PaidCallPanel({
   const [result, setResult] = useState<PaidCallResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(true);
+  const [clipLabel, setClipLabel] = useState<string | null>(null);
   const busy = step !== null && step.stage !== "done" && !error;
 
   const verified = (owner: string | null) =>
@@ -70,6 +71,7 @@ export default function PaidCallPanel({
     setError(null);
     setResult(null);
     setStep(null);
+    setClipLabel(null);
     try {
       if (!live) throw new Error("The paid AEI gateway is not live yet.");
       if (!isConnected || !address) throw new Error("Connect a wallet first.");
@@ -77,6 +79,7 @@ export default function PaidCallPanel({
       if (!walletClient) throw new Error("Wallet not ready on Celo yet. Try again in a moment.");
       const clip = await getClip();
       if (!clip) throw new Error("Load a track or start a live source first.");
+      setClipLabel(clip.label ?? clip.name);
       const account = walletClient.account;
       const signer: ClientEvmSigner = {
         address: account.address,
@@ -121,8 +124,9 @@ export default function PaidCallPanel({
 
       {!live && (
         <p className="mb-2 rounded-md border border-line bg-white/[0.03] p-2.5 text-[12px] leading-snug text-muted">
-          No paid AEI gateway is deployed yet, so no call, payment or settlement tx can happen here. Set{" "}
-          <code className="text-foreground">NEXT_PUBLIC_AEI_GATEWAY_URL</code> once the x402 gateway is live and this panel goes live with no other change.
+          Paid AEI calls are switched off on this deployment, so no call, payment or settlement tx can happen here. They go live when{" "}
+          <code className="text-foreground">NEXT_PUBLIC_AEI_GATEWAY_URL</code> is set (the gateway is this site&apos;s own{" "}
+          <code className="text-foreground">/v1/aei/signals</code>).
         </p>
       )}
 
@@ -134,6 +138,7 @@ export default function PaidCallPanel({
               {error && !req ? <span className="text-red-300">{error}</span> : step ? STAGE_LABEL[step.stage] : "Ready"}
               {result && ` · HTTP ${result.httpStatus} · ${Math.round(result.ms)} ms`}
             </div>
+            {clipLabel && <div className="font-mono text-[11px] text-subtle">{clipLabel}</div>}
           </>
         ) : (
           <span className="text-muted">Not deployed</span>

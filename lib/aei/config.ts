@@ -39,7 +39,14 @@ export const AEI_MAX_PRICE_USDC = process.env.NEXT_PUBLIC_AEI_MAX_PRICE_USDC || 
 export const CELO_RPC_URL = process.env.NEXT_PUBLIC_CELO_RPC_URL || "https://forno.celo.org";
 export const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
 
-export const aeiEndpoint = () => (AEI_GATEWAY_URL ? `${AEI_GATEWAY_URL}${AEI_ENDPOINT_PATH}` : "");
+/**
+ * "same-origin" means the gateway is this site's own /v1/aei/signals route
+ * (app/v1/aei/signals/route.ts), so production and preview deployments each
+ * call themselves. A full URL points at a separate gateway.
+ */
+export const AEI_SAME_ORIGIN = AEI_GATEWAY_URL === "same-origin";
+export const aeiEndpoint = () =>
+  AEI_SAME_ORIGIN ? AEI_ENDPOINT_PATH : AEI_GATEWAY_URL ? `${AEI_GATEWAY_URL}${AEI_ENDPOINT_PATH}` : "";
 export const txUrl = (hash: string) => `${CELOSCAN}/tx/${hash}`;
 export const addressUrl = (a: string) => `${CELOSCAN}/address/${a}`;
 export const short = (s: string, n = 6) => (s.length > 2 * n + 2 ? `${s.slice(0, n + 2)}…${s.slice(-n)}` : s);

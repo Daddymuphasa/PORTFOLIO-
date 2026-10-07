@@ -70,36 +70,38 @@ Below the flow, the panel shows the ERC-8004 agent #9882 and Self Agent ID #192
 registration txs, with owners re-checked on-chain (read-only) every 5 minutes.
 They are labelled as registrations, not payments.
 
-### Status: the gateway does not exist yet
+### The gateway
 
-No paid AEI gateway is deployed, and PAPAGEDON-CORE- has no HTTP/x402 server or
-mainnet payment path. Until `NEXT_PUBLIC_AEI_GATEWAY_URL` is set the panel says
-"Gateway not live" and the pay button is disabled. The flow was verified end to
-end against a local mock gateway (`tests/paidCall.e2e.test.ts`) with a throwaway
-key and a fake settlement hash. No real transaction was made.
+The paid gateway lives in this repo: `POST /v1/aei/signals`
+(`app/v1/aei/signals/route.ts`, `lib/aei/gateway.ts`). See
+[`AEI_GATEWAY.md`](./AEI_GATEWAY.md) for the flow, input/output and setup.
 
-### What the gateway must do for this UI to work
+* The panel sends a WAV clip (20 s of the loaded track from the play position,
+  or 8 s recorded from the mic / system audio, decoded in the browser), field
+  `audio`. The gateway only reads WAV, so it analyses exactly those samples.
+* 402 + `PAYMENT-REQUIRED`: `exact` on `eip155:42220`, USDC, 10000 units
+  (0.01), `payTo` the PAPAGEDON wallet, `extra: { name: "USDC", version: "2" }`
+  (a USDT option follows; the panel picks USDC).
+* Verify and settle through `https://api.x402.celo.org`; settle only after AEI
+  succeeded. 200 JSON + `PAYMENT-RESPONSE` (with `transaction`); the tx hash is
+  also in `body.payment`.
+* CORS: `*`, allows `PAYMENT-SIGNATURE`, exposes `PAYMENT-REQUIRED, PAYMENT-RESPONSE`.
 
-- `POST /v1/aei/signals` (multipart `audio`) protected by x402 v2:
-  402 + `PAYMENT-REQUIRED` with one `exact` option on `eip155:42220`, USDC,
-  `payTo` = the PAPAGEDON wallet, amount e.g. `10000` (0.01 USDC),
-  `extra: { name: "USDC", version: "2" }`.
-- Verify and settle via the Celo x402 facilitator (`https://api.x402.celo.org`),
-  run AEI, return 200 JSON + `PAYMENT-RESPONSE` (with `transaction`).
-- CORS for `https://www.papagedon.com`: allow header `PAYMENT-SIGNATURE`,
-  expose `PAYMENT-REQUIRED, PAYMENT-RESPONSE`.
+Paid calls stay off (panel: "Gateway not live") until
+`NEXT_PUBLIC_AEI_GATEWAY_URL=same-origin` and the server's `X402_API_KEY` are set.
 
 ## Env vars
 
-See `.env.example`. All are public and read at build time:
+See `.env.example`. Browser (public, read at build time):
 `NEXT_PUBLIC_AEI_GATEWAY_URL`, `NEXT_PUBLIC_AEI_ENDPOINT_PATH`,
 `NEXT_PUBLIC_AEI_MAX_PRICE_USDC`, `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`,
-`NEXT_PUBLIC_CELO_RPC_URL`.
+`NEXT_PUBLIC_CELO_RPC_URL`. Gateway (server only): `X402_API_KEY` (secret),
+`AEI_PAY_TO`, `AEI_PRICE_USDC`, `AEI_NETWORK`, `X402_FACILITATOR_URL`.
 
 ## Checks
 
 ```bash
-npm test        # analyzer port (FFT, ~120 BPM detection), quote guard, x402 e2e vs mock
+npm test        # analyzer port, quote guard, x402 client e2e, gateway 402/paid flow, AEI on a sample WAV
 npm run build   # type-check + production build
 ```
 
