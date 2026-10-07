@@ -21,6 +21,7 @@ import { ASSET_BASE, catalog, type PackDef, type ThemeDef } from "@/lib/papagedo
 import { Web3Provider } from "./Web3Provider";
 import WalletButton from "./WalletButton";
 import PaidCallPanel, { type IdentityStatus } from "./PaidCallPanel";
+import { CollapsibleSection } from "./ui/Collapsible";
 import { encodeWavMono16 } from "@/lib/aei/wav";
 
 const DEMO_CYCLE_SECONDS = 20; // PAPAGEDON_DEMO_CYCLE in Runtime.cpp
@@ -33,15 +34,27 @@ const defaultPack = catalog.packs.find((p) => p.id === "SignaturePack") ?? catal
 type Hud = { s: ExperienceSignals; g: ExperienceGraphOutput };
 
 function Meter({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
-    <div className="grid grid-cols-[52px_1fr] items-center gap-2">
+    <div className="grid grid-cols-[52px_1fr_28px] items-center gap-2">
       <span className="pg-label !tracking-[0.12em]">{label}</span>
-      <div className="pg-meter">
-        <span style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%` }} />
+      <div className="pgx-meter">
+        <span style={{ width: `${pct}%` }} />
       </div>
+      <span className="text-right font-mono text-[10px] text-muted">{pct}</span>
     </div>
   );
 }
+
+const IconWave = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 8h2l1.5-4 2 8 2-10 2 9 1.5-3H15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+const IconSpark = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1.5l1.6 4.9L14.5 8l-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+);
+const IconPulse = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="7" width="2" height="6" rx=".8" fill="currentColor" /><rect x="5.5" y="4" width="2" height="9" rx=".8" fill="currentColor" /><rect x="9" y="2" width="2" height="11" rx=".8" fill="currentColor" /><rect x="12.5" y="6" width="2" height="7" rx=".8" fill="currentColor" /></svg>
+);
 
 export default function PapagedonApp({ identity }: { identity: IdentityStatus }) {
   return (
@@ -280,34 +293,53 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
       <canvas ref={canvasRef} className="pgx-stage" />
       {dragging && <div className="pgx-drop">Drop a track to play it through PAPAGEDON</div>}
 
-      <div className="pgx-ui" style={{ opacity: hideUi ? 0 : 1, transition: "opacity .25s" }}>
-        <nav className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
+      <div className={`pgx-ui ${hideUi ? "is-hidden" : ""}`}>
+        <nav className="pgx-nav">
           <Link href="/" className="flex items-center gap-3" aria-label="PAPAGEDON home">
             <BrandLogo compact />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted md:inline">Celo mainnet</span>
             <WalletButton />
           </div>
         </nav>
 
-        {glError && (
-          <div className="mx-4 rounded-lg border border-red-400/40 bg-red-950/60 p-3 text-sm md:mx-6">{glError}</div>
-        )}
+        {glError && <div className="pgx-alert mx-4 md:mx-6">{glError}</div>}
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between gap-3 overflow-y-auto px-4 pb-4 md:flex-row md:items-end md:px-6">
-          <div className="flex w-full flex-col gap-3 md:w-[300px]">
-            <section className="pg-panel">
-              <div className="pg-label mb-2">Audio input</div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <label className={`pg-btn justify-center ${source === "file" ? "pg-btn-on" : ""}`}>
+        <div className="pgx-dock">
+          <div className="pgx-col pgx-col-left">
+            <CollapsibleSection
+              title="Audio input"
+              icon={<IconWave />}
+              summary={
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {source && <span className={`pgx-live-dot ${playing ? "is-on" : ""}`} />}
+                  <span className="truncate" title={sourceLabel}>{source ? sourceLabel : "Choose a source"}</span>
+                </span>
+              }
+              aside={
+                source === "file" ? (
+                  <button type="button" className="pgx-icon-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"} title={playing ? "Pause (Space)" : "Play (Space)"}>
+                    {playing ? (
+                      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="4" y="3" width="3" height="10" rx="1" fill="currentColor" /><rect x="9" y="3" width="3" height="10" rx="1" fill="currentColor" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M5 3l8 5-8 5z" fill="currentColor" /></svg>
+                    )}
+                  </button>
+                ) : undefined
+              }
+            >
+              <div className="pgx-seg">
+                <label className={`pgx-seg-btn ${source === "file" ? "is-on" : ""}`}>
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 12.5V4l7-1.5V11" fill="none" stroke="currentColor" strokeWidth="1.4" /><circle cx="4.5" cy="12.5" r="1.6" fill="currentColor" /><circle cx="11.5" cy="11" r="1.6" fill="currentColor" /></svg>
                   File
                   <input type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
                 </label>
-                <button className={`pg-btn justify-center ${source === "input" ? "pg-btn-on" : ""}`} onClick={() => startInput(deviceId)}>
+                <button type="button" className={`pgx-seg-btn ${source === "input" ? "is-on" : ""}`} onClick={() => startInput(deviceId)}>
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="6" y="2" width="4" height="8" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M3.5 8a4.5 4.5 0 0 0 9 0M8 12.5V14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                   Mic / input
                 </button>
-                <button className={`pg-btn justify-center ${source === "loopback" ? "pg-btn-on" : ""}`} onClick={startLoopback}>
+                <button type="button" className={`pgx-seg-btn ${source === "loopback" ? "is-on" : ""}`} onClick={startLoopback}>
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M6 13.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                   System
                 </button>
               </div>
@@ -318,71 +350,85 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
                   ))}
                 </select>
               )}
-              <div className="mt-2 flex items-center justify-between gap-2 text-[12px]">
-                <span className="truncate text-muted" title={sourceLabel}>{sourceLabel}</span>
-                {source === "file" && (
-                  <button className="pg-btn !px-2 !py-1" onClick={togglePlay}>{playing ? "Pause" : "Play"}</button>
-                )}
-              </div>
-              {!source && <p className="mt-1 text-[11px] text-subtle">Pick a file (or drop one anywhere), use the mic or an audio interface, or share a tab / system audio.</p>}
-              {sourceError && <p className="mt-1 text-[11px] text-red-300">{sourceError}</p>}
-            </section>
+              {!source && <p className="pgx-hint">Pick a file (or drop one anywhere), use the mic or an audio interface, or share a tab / system audio.</p>}
+              {sourceError && <p className="pgx-hint text-red-300">{sourceError}</p>}
+            </CollapsibleSection>
 
-            <section className="pg-panel">
-              <div className="pg-label mb-2">Visuals · engine shader packs</div>
+            <CollapsibleSection
+              title="Visuals"
+              icon={<IconSpark />}
+              summary={
+                <span className="truncate">
+                  {String(Math.min(shaderIndex, pack.shaders.length - 1) + 1).padStart(2, "0")} · {shader?.name ?? "—"} · {theme?.name}
+                  {autoCycle ? " · Auto" : ""}
+                </span>
+              }
+            >
+              <label className="pgx-field-label">Shader pack</label>
               <select className="pg-select" value={pack.id} onChange={(e) => choosePack(e.target.value)}>
                 {catalog.packs.map((p) => (
                   <option key={p.id} value={p.id}>{p.name} ({p.shaders.length})</option>
                 ))}
               </select>
-              <div className="mt-2 flex items-center gap-1.5">
-                <button className="pg-btn !px-2" onClick={() => step(-1)} aria-label="Previous shader">[</button>
+              <label className="pgx-field-label mt-2">Shader</label>
+              <div className="flex items-center gap-1.5">
+                <button type="button" className="pgx-icon-btn" onClick={() => step(-1)} aria-label="Previous shader" title="Previous shader ([)">
+                  <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
                 <select className="pg-select" value={shaderIndex} onChange={(e) => setShaderIndex(Number(e.target.value))}>
                   {pack.shaders.map((sh, i) => (
                     <option key={sh.id} value={i}>{String(i + 1).padStart(2, "0")} · {sh.name}</option>
                   ))}
                 </select>
-                <button className="pg-btn !px-2" onClick={() => step(1)} aria-label="Next shader">]</button>
+                <button type="button" className="pgx-icon-btn" onClick={() => step(1)} aria-label="Next shader" title="Next shader (])">
+                  <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
               </div>
-              <div className="mt-2 flex items-center gap-1.5">
+              <label className="pgx-field-label mt-2">Theme</label>
+              <div className="flex items-center gap-1.5">
                 <select className="pg-select" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
                   {catalog.themes.map((t, i) => (
                     <option key={t.id} value={t.id}>{i + 1} · {t.name}</option>
                   ))}
                 </select>
-                <button className={`pg-btn ${autoCycle ? "pg-btn-on" : ""}`} onClick={() => setAutoCycle((v) => !v)} title={`Next shader every ${DEMO_CYCLE_SECONDS}s`}>
+                <button type="button" className={`pgx-chip-btn ${autoCycle ? "is-on" : ""}`} onClick={() => setAutoCycle((v) => !v)} title={`Next shader every ${DEMO_CYCLE_SECONDS}s (A)`} aria-pressed={autoCycle}>
                   Auto
                 </button>
               </div>
-              {shaderError && <p className="mt-1 text-[11px] text-red-300">{shaderError}</p>}
-            </section>
+              {shaderError && <p className="pgx-hint text-red-300">{shaderError}</p>}
+            </CollapsibleSection>
 
-            <section className="pg-panel">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="pg-label">Live signals</span>
-                <span className="font-mono text-[11px] text-muted">
-                  <span key={beatFlash} className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent" style={{ animation: "pgxBeat .25s ease-out forwards" }} />
+            <CollapsibleSection
+              title="Live signals"
+              icon={<IconPulse />}
+              summary={
+                <span className="flex items-center gap-2 font-mono text-[11px]">
+                  <span key={beatFlash} className="pgx-beat" />
                   {s.bpm ? `${Math.round(s.bpm)} BPM` : "— BPM"} · {g.state}
+                  <span className="pgx-mini-meter"><span style={{ width: `${Math.round(Math.min(1, Math.max(0, s.energy)) * 100)}%` }} /></span>
                 </span>
-              </div>
-              <div className="grid gap-1.5">
+              }
+            >
+              <div className="grid gap-2">
                 <Meter label="Energy" value={s.energy} />
                 <Meter label="Bass" value={s.bass} />
                 <Meter label="Mid" value={s.mid} />
                 <Meter label="Treble" value={s.treble} />
               </div>
-              <p className="mt-2 text-[10px] leading-snug text-subtle">
-                Analysis runs in your browser: a direct port of the engine&apos;s AudioAnalyzer. Keys: Space play/pause · [ ] shader · 1–9 theme · A auto · H hide.
+              <p className="pgx-hint">
+                Analysis runs in your browser, a direct port of the engine&apos;s AudioAnalyzer.
               </p>
-            </section>
+              <p className="pgx-keys">
+                <kbd>Space</kbd> play · <kbd>[</kbd><kbd>]</kbd> shader · <kbd>1</kbd>–<kbd>9</kbd> theme · <kbd>A</kbd> auto · <kbd>H</kbd> hide UI
+              </p>
+            </CollapsibleSection>
           </div>
 
-          <div className="w-full md:w-[360px]">
+          <div className="pgx-col pgx-col-right">
             <PaidCallPanel identity={identity} getClip={getClip} />
           </div>
         </div>
       </div>
-      <style>{`@keyframes pgxBeat { from { opacity: 1; transform: scale(1.6); } to { opacity: .25; transform: scale(1); } }`}</style>
     </div>
   );
 }
