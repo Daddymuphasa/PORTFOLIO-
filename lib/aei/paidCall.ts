@@ -85,6 +85,17 @@ async function readBody(res: Response): Promise<unknown> {
   }
 }
 
+const REJECTIONS: Record<string, string> = {
+  insufficient_funds: "this wallet doesn't hold enough USDC on Celo",
+  invalid_exact_evm_payload_signature: "the signature didn't match",
+  invalid_exact_evm_payload_authorization_valid_before: "the signed payment expired, try again",
+};
+
+/** Turns an x402 / facilitator error code into a short sentence. Nothing was paid in any of these cases. */
+export function explainRejection(code: string): string {
+  return `${REJECTIONS[code] ?? code.replace(/_/g, " ")} (nothing was paid)`;
+}
+
 export async function runPaidCall(opts: {
   url: string;
   makeBody: () => FormData;
@@ -142,10 +153,19 @@ export async function runPaidCall(opts: {
     settled = settle.success;
     settleError = settle.success ? null : settle.errorMessage ?? settle.errorReason ?? "Settlement failed";
   } catch {
-    settleError =
-      second.status === 402
-        ? "The gateway rejected the payment"
-        : "No PAYMENT-RESPONSE header (the gateway must expose it via Access-Control-Expose-Headers)";
+    if (second.status === 402) {
+      let reason = "";
+      try {
+        reason = http.getPaymentRequiredResponse((h) => second.headers.get(h), body).error ?? "";
+      } catch {
+        // no readable PAYMENT-REQUIRED on the rejection
+      }
+      settleError = `The gateway rejected the payment${reason ? `: ${explainRejection(reason)}` : ""}`;
+    } else {
+      settleError = second.ok
+        ? "No PAYMENT-RESPONSE header (the gateway must expose it via Access-Control-Expose-Headers)"
+        : null;
+    }
   }
   const result: PaidCallResult = {
     httpStatus: second.status,

@@ -29,7 +29,7 @@ const URL_PATH = "/v1/aei/signals";
 
 type Calls = { supported: number; verify: number; settle: number };
 
-function fakeFacilitator(opts: { settleOk?: boolean } = {}): FacilitatorClient & { calls: Calls } {
+function fakeFacilitator(opts: { settleOk?: boolean; verifyReason?: string } = {}): FacilitatorClient & { calls: Calls } {
   const calls: Calls = { supported: 0, verify: 0, settle: 0 };
   const checkSig = async (payload: Parameters<FacilitatorClient["verify"]>[0], req: Parameters<FacilitatorClient["verify"]>[1]) => {
     const p = payload.payload as { signature: `0x${string}`; authorization: Record<string, string> };
@@ -68,6 +68,7 @@ function fakeFacilitator(opts: { settleOk?: boolean } = {}): FacilitatorClient &
     async verify(payload, req) {
       calls.verify++;
       const { ok, payer } = await checkSig(payload, req);
+      if (opts.verifyReason) return { isValid: false, invalidReason: opts.verifyReason, payer };
       return ok ? { isValid: true, payer } : { isValid: false, invalidReason: "invalid_exact_evm_payload_signature", payer };
     },
     async settle(payload, req) {
@@ -81,7 +82,7 @@ function fakeFacilitator(opts: { settleOk?: boolean } = {}): FacilitatorClient &
   };
 }
 
-function gateway(opts: { settleOk?: boolean } = {}) {
+function gateway(opts: { settleOk?: boolean; verifyReason?: string } = {}) {
   const facilitator = fakeFacilitator(opts);
   const gw = createAeiGateway({ config: gatewayConfigFromEnv({}), facilitator });
   return { gw, facilitator };
@@ -304,4 +305,19 @@ test("free health/pricing endpoint", async () => {
   assert.equal(h.pricing.payTo, PAPAGEDON_PAYEE);
   assert.equal(h.settlement.apiKeyConfigured, true);
   assert.equal(JSON.stringify(h).includes("X-API-Key"), false);
+});
+
+test("an unfunded wallet is told why: verify fails, nothing runs or settles", async () => {
+  const { gw, facilitator } = gateway({ verifyReason: "insufficient_funds" });
+  const { url, close } = await serve(gw.handleSignals);
+  try {
+    const r = await runPaidCall({ url, makeBody: () => wavForm(), signer: privateKeyToAccount(generatePrivateKey()), onStep: () => undefined });
+    assert.equal(r.httpStatus, 402);
+    assert.equal(r.settled, false);
+    assert.equal(r.transaction, null);
+    assert.match(r.settleError ?? "", /doesn't hold enough USDC on Celo \(nothing was paid\)/);
+    assert.deepEqual({ verify: facilitator.calls.verify, settle: facilitator.calls.settle }, { verify: 1, settle: 0 });
+  } finally {
+    close();
+  }
 });
