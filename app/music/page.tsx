@@ -9,6 +9,7 @@ const platforms = [
   ["Boomplay", "Listen to Chaos & Order", "https://www.boomplay.com/songs/EQtA6zEPu6jy75V_n3Io9fZk?srModel=COPYLINK&srList=WEB&share_content=music&share_channel=copylink&share_platform=web", "boomplay"],
 ];
 const holyCloutPlatforms = [
+  ["YouTube", "Watch HOLY CLOUT", "https://youtu.be/UyQ7TW-EY1I", "youtube"],
   ["Spotify", "Stream HOLY CLOUT", "https://open.spotify.com/track/4VblJpJMOhZoa0QorwWWkU?si=f4585149f84946f7", "spotify"],
   ["Apple Music", "Stream HOLY CLOUT", "https://music.apple.com/ng/album/holy-clout-single/6805835723", "apple"],
   ["Audiomack", "Stream HOLY CLOUT", "https://audiomack.com/daddy-muphasa/song/holyclout-mix", "audiomack"],
@@ -33,18 +34,6 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><BrandLogo compact /></Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
-    <section className="music-release">
-      <div className="release-cover matrix-panel">
-        <div className="matrix-rain" aria-hidden>{Array.from({ length: 18 }, (_, index) => <span key={index}>01 ᛉ 10 ∴ 11 ◇ 00 ᚠ 01 10</span>)}</div>
-        <div className="matrix-seal" aria-hidden>✦</div>
-        <img src="/chaos-and-order.webp" alt="Chaos & Order cover art" />
-      </div>
-      <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
-        <p className="platforms-label">STREAM THE NEW SINGLE</p>
-        <div className="platforms">{platforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
-        <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
-      </div>
-    </section>
     <section className="holy-feature" aria-labelledby="holy-feature-title">
       <div className="holy-feature-glow" aria-hidden />
       <div className="holy-feature-art group relative">
@@ -60,6 +49,18 @@ export default function MusicPage() {
           {holyCloutPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}
         </div>
         <a href="https://open.spotify.com/artist/1qEJkmdYVtBNlYOcUZJP7u" target="_blank" rel="noreferrer" className="mt-6 inline-flex border border-amber-200/45 px-4 py-2 font-mono text-[10px] tracking-[.16em] text-amber-100 transition hover:bg-amber-200 hover:text-stone-950">FOLLOW DADDY MUPHASA ↗</a>
+      </div>
+    </section>
+    <section className="music-release">
+      <div className="release-cover matrix-panel">
+        <div className="matrix-rain" aria-hidden>{Array.from({ length: 18 }, (_, index) => <span key={index}>01 ᛉ 10 ∴ 11 ◇ 00 ᚠ 01 10</span>)}</div>
+        <div className="matrix-seal" aria-hidden>✦</div>
+        <img src="/chaos-and-order.webp" alt="Chaos & Order cover art" />
+      </div>
+      <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1>CHAOS<br /><em>&amp;</em> ORDER</h1><p className="release-description">peace be still <strong>(Mark 4:39)</strong></p>
+        <p className="platforms-label">STREAM THE NEW SINGLE</p>
+        <div className="platforms">{platforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
+        <div className="music-socials">{socials.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name} ↗</a>)}</div>
       </div>
     </section>
     <section className="astronomy-feature" aria-labelledby="astronomy-title">
