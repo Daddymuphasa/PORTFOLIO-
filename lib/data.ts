@@ -141,6 +141,19 @@ export type MusicRelease = {
 
 export const musicReleases: MusicRelease[] = [
   {
+    title: "HOLY CLOUT",
+    status: "New Release",
+    tag: "Out Now",
+    cover: "/holy-clout.jpg",
+    href: "https://youtu.be/UyQ7TW-EY1I",
+    platform: "YouTube",
+    description:
+      "in the beginning",
+    note: "Out now · Four platforms",
+    accent: "#f5b52e",
+    accentSoft: "#ffe3a0",
+  },
+  {
     title: "CHAOS & ORDER",
     status: "New Release",
     tag: "Out Now",
@@ -151,19 +164,6 @@ export const musicReleases: MusicRelease[] = [
     note: "Out now!",
     accent: "#99f6a5",
     accentSoft: "#c8ffd0",
-  },
-  {
-    title: "HOLY CLOUT",
-    status: "New Release",
-    tag: "Out Now",
-    cover: "/holy-clout.jpg",
-    href: "https://open.spotify.com/track/4VblJpJMOhZoa0QorwWWkU?si=f4585149f84946f7",
-    platform: "Spotify",
-    description:
-      "in the beginning",
-    note: "Out now · Four platforms",
-    accent: "#f5b52e",
-    accentSoft: "#ffe3a0",
   },
 ];
 
