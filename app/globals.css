@@ -11,6 +11,9 @@
     --foreground: #e8e6dd;
     --accent: #5aa98a;
     --steel: #7fa1b2;
+    --font-space-grotesk: "Segoe UI", Arial, sans-serif;
+    --font-inter: "Segoe UI", Arial, sans-serif;
+    --font-jetbrains-mono: "Cascadia Mono", Consolas, monospace;
   }
 
   * {
