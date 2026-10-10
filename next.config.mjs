@@ -46,6 +46,14 @@ const nextConfig = {
     };
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: "/monad",
+        destination: "/monad/index.html",
+      },
+    ];
+  },
   async headers() {
     return [
       {
