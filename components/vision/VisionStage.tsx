@@ -3,7 +3,7 @@
 /**
  * papagedon.com/app, Vision mode: PAPAGEDON sees the crowd and hears the music.
  *
- *   camera -> OpenCV 5 service on AWS (NEXT_PUBLIC_VISION_SERVICE_URL)  -> CrowdMetrics
+ *   camera -> OpenCV 5 on AWS Lambda (NEXT_PUBLIC_VISION_SERVICE_URL)  -> CrowdMetrics
  *          \-> in-browser fallback (lib/vision/browserCrowd.ts)        /
  *   audio  -> AudioAnalyzer (port of the engine)                      -> A_t
  *   fuse() -> room energy E_t -> SceneDirector -> one of the 9 original visualizers
@@ -152,6 +152,9 @@ export default function VisionStage() {
     let timer = 0;
     let inFlight = false;
     let failures = 0;
+    let retryAt = 0;
+    let first = true;
+    let prevBlob: Blob | null = null;
     let stopped = false;
     const session = Math.random().toString(36).slice(2, 10);
     const grab = (grabRef.current ??= document.createElement("canvas"));
@@ -164,24 +167,31 @@ export default function VisionStage() {
       if (stopped || video.readyState < 2) return;
       const t0 = performance.now();
       g.drawImage(video, 0, 0, ANALYSIS_W, ANALYSIS_H);
+      if (failures >= 3 && performance.now() > retryAt) failures = 0; // try the service again every 30 s
       if (ctl.current.useService && failures < 3) {
         if (inFlight) return;
         inFlight = true;
         try {
           const blob = await new Promise<Blob | null>((r) => grab.toBlob(r, "image/jpeg", 0.7));
           if (blob) {
-            const m = await analyzeOnService(blob, session, AbortSignal.timeout(2000));
+            // First call may hit a Lambda cold start: allow longer.
+            const m = await analyzeOnService(blob, prevBlob, session, AbortSignal.timeout(first ? 15000 : 2500));
+            prevBlob = blob;
+            first = false;
             crowdRef.current = { m, at: performance.now() };
             failures = 0;
             setServiceDown(false);
           }
         } catch {
           failures++;
-          if (failures >= 3) setServiceDown(true);
+          if (failures >= 3) {
+            retryAt = performance.now() + 30000;
+            setServiceDown(true);
+          }
         } finally {
           inFlight = false;
         }
-        return;
+        if (failures < 3) return;
       }
       const m = browserCrowd.current.update(toGray(g.getImageData(0, 0, ANALYSIS_W, ANALYSIS_H).data));
       crowdRef.current = { m: { ...m, source: "browser", latencyMs: performance.now() - t0 }, at: performance.now() };
@@ -325,7 +335,7 @@ export default function VisionStage() {
                 <Meter label="Room E" value={fusion.room} />
               </div>
               <p className="pgx-hint font-mono">
-                {fps.toFixed(0)} fps render · analysis {crowd ? `${crowd.latencyMs.toFixed(0)} ms` : "—"} · {backend === "opencv-service" ? "OpenCV 5 on AWS" : backend === "browser" ? "in-browser fallback" : "no camera"}
+                {fps.toFixed(0)} fps render · analysis {crowd ? `${crowd.latencyMs.toFixed(0)} ms` : "—"} · {backend === "opencv-service" ? "OpenCV 5 on AWS Lambda" : backend === "browser" ? "in-browser fallback" : "no camera"}
                 {crowd?.people != null ? ` · ${crowd.people} people` : ""}
                 {hud.bpm ? ` · ${Math.round(hud.bpm)} BPM` : ""}
                 {fusion.eased ? " · easing (crowd and music disagree)" : ""}

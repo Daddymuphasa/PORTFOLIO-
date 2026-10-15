@@ -54,10 +54,17 @@ def synthetic_frames(limit: int):
         yield img
 
 
-def post(url: str, jpeg: bytes) -> dict:
-    req = urllib.request.Request(f"{url.rstrip('/')}/v1/analyze", data=jpeg, method="POST",
-                                 headers={"Content-Type": "image/jpeg", "X-Session-Id": "eval"})
-    with urllib.request.urlopen(req, timeout=5) as r:
+def post(url: str, jpeg: bytes, prev: bytes | None) -> dict:
+    """Same request shape as the web app: multipart `frame` + previous frame `prev`."""
+    boundary = "papagedonvision"
+    parts = [("frame", jpeg)] + ([("prev", prev)] if prev else [])
+    body = b"".join(
+        (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{n}\"; filename=\"{n}.jpg\"\r\n"
+         "Content-Type: image/jpeg\r\n\r\n").encode() + data + b"\r\n" for n, data in parts
+    ) + f"--{boundary}--\r\n".encode()
+    req = urllib.request.Request(f"{url.rstrip('/')}/v1/analyze", data=body, method="POST",
+                                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "X-Session-Id": "eval"})
+    with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read())
 
 
@@ -81,12 +88,19 @@ def main():
     src = frames_from_video(a.video, a.frames) if a.video else synthetic_frames(a.frames)
     state = CrowdState()
     rows, lat = [], []
+    prev = None
+    cold = 0
     t_start = time.perf_counter()
     for i, frame in enumerate(src):
         small = cv2.resize(frame, (320, 240))
         jpeg = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])[1].tobytes()
         t0 = time.perf_counter()
-        m = post(a.url, jpeg) if a.url else state.update(cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR))
+        if a.url:
+            m = post(a.url, jpeg, prev)
+            cold += 0 if m.get("warm", True) else 1
+        else:
+            m = state.update(cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR))
+        prev = jpeg
         ms = (time.perf_counter() - t0) * 1000
         lat.append(ms)
         rows.append({"frame": i, "latency_ms": round(ms, 2), "motion": m["motion"], "density": m["density"], "energy": m["energy"]})
@@ -102,6 +116,7 @@ def main():
         "throughput_fps": round(len(lat) / wall, 1),
         "latency_ms": {"mean": round(statistics.mean(lat), 2), "p50": round(pct(lat, 50), 2),
                        "p95": round(pct(lat, 95), 2), "max": round(max(lat), 2)},
+        "cold_sessions": cold,
         "metric_means": {k: round(statistics.mean(r[k] for r in rows), 4) for k in ("motion", "density", "energy")},
     }
     out = Path(a.out)

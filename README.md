@@ -33,8 +33,8 @@ Type: **Space Grotesk** (headings), **Inter** (body), **JetBrains Mono** (labels
 
 ## PAPAGEDON Vision (OpenCV AI Competition 2026, powered by AWS)
 
-`/app` now opens PAPAGEDON Vision: the camera reads the crowd (OpenCV 5 on AWS, or in
-the browser as a fallback), the engine hears the music, and the two are fused into one
+`/app` now opens PAPAGEDON Vision: the camera reads the crowd (OpenCV 5 on AWS Lambda,
+image in ECR, CloudWatch metrics, S3 results; or in the browser as a fallback), the engine hears the music, and the two are fused into one
 room energy that picks among the nine original PAPAGEDON visualizers. Code:
 `components/vision/`, `lib/vision/`, `vision-service/`. Architecture diagram, setup,
 one-command AWS deploy, evaluation, limitations and responsible use:

@@ -1,28 +1,22 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: PAPAGEDON Vision - OpenCV 5 crowd analysis on EC2 behind CloudFront (HTTPS), logs + metrics in CloudWatch, results in S3.
+Description: PAPAGEDON Vision - OpenCV 5 crowd analysis as a Lambda container image (ECR) behind a Lambda Function URL (HTTPS). CloudWatch logs + metrics + alarm, S3 for evaluation results.
 
 Parameters:
   ImageUri:
     Type: String
     Description: ECR image URI pushed by deploy.sh
-  InstanceType:
-    Type: String
-    Default: t3.small
   AllowedOrigins:
     Type: String
     Default: https://papagedon.com,https://www.papagedon.com
-  CloudFrontPrefixList:
-    Type: String
-    Description: Managed prefix list id for com.amazonaws.global.cloudfront.origin-facing in this region (deploy.sh looks it up)
-  LatestAmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  MemorySize:
+    Type: Number
+    Default: 1024
 
 Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /papagedon/vision
+      LogGroupName: /aws/lambda/papagedon-vision
       RetentionInDays: 14
 
   ResultsBucket:
@@ -44,79 +38,56 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Principal: { Service: ec2.amazonaws.com }
+            Principal: { Service: lambda.amazonaws.com }
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
-        - PolicyName: logs-and-results
+        - PolicyName: logs-only
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: [logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogStreams]
-                Resource: !GetAtt LogGroup.Arn
-              - Effect: Allow
-                Action: [s3:PutObject]
-                Resource: !Sub "${ResultsBucket.Arn}/*"
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "${LogGroup.Arn}:*"
 
-  InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: LogGroup
     Properties:
-      Roles: [!Ref Role]
+      FunctionName: papagedon-vision
+      PackageType: Image
+      Code: { ImageUri: !Ref ImageUri }
+      Role: !GetAtt Role.Arn
+      Architectures: [x86_64]
+      MemorySize: !Ref MemorySize
+      Timeout: 15
+      Environment:
+        Variables:
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
 
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  FunctionUrl:
+    Type: AWS::Lambda::Url
     Properties:
-      GroupDescription: Vision service, reachable only from CloudFront
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          SourcePrefixListId: !Ref CloudFrontPrefixList
+      TargetFunctionArn: !Ref Function
+      AuthType: NONE
+      # CORS is answered by the app itself (FastAPI middleware) so *.vercel.app
+      # previews and localhost can be matched by regex; no Cors block here, or
+      # browsers would see duplicate Access-Control headers.
 
-  Instance:
-    Type: AWS::EC2::Instance
+  UrlInvokePermission:
+    Type: AWS::Lambda::Permission
     Properties:
-      ImageId: !Ref LatestAmiId
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      SecurityGroupIds: [!GetAtt SecurityGroup.GroupId]
-      Tags: [{ Key: Name, Value: papagedon-vision }]
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -euxo pipefail
-          dnf install -y docker
-          systemctl enable --now docker
-          REGISTRY=$(echo "${ImageUri}" | cut -d/ -f1)
-          aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin "$REGISTRY"
-          docker pull "${ImageUri}"
-          docker run -d --restart=always --name vision -p 8080:8080 \
-            -e ALLOWED_ORIGINS="${AllowedOrigins}" \
-            --log-driver=awslogs --log-opt awslogs-region=${AWS::Region} \
-            --log-opt awslogs-group=/papagedon/vision --log-opt awslogs-stream=vision \
-            "${ImageUri}"
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
 
-  Distribution:
-    Type: AWS::CloudFront::Distribution
+  InvokePermission:
+    Type: AWS::Lambda::Permission
     Properties:
-      DistributionConfig:
-        Enabled: true
-        Comment: PAPAGEDON Vision HTTPS front door
-        Origins:
-          - Id: vision
-            DomainName: !GetAtt Instance.PublicDnsName
-            CustomOriginConfig:
-              HTTPPort: 8080
-              OriginProtocolPolicy: http-only
-        DefaultCacheBehavior:
-          TargetOriginId: vision
-          ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
-          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
-          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
 
   LatencyAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -132,10 +103,24 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
 
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Vision Lambda errors
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Ref Function }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 Outputs:
   ServiceUrl:
-    Description: Set this as NEXT_PUBLIC_VISION_SERVICE_URL on Vercel
-    Value: !Sub "https://${Distribution.DomainName}"
+    Description: Set this (without the trailing slash) as NEXT_PUBLIC_VISION_SERVICE_URL on Vercel
+    Value: !GetAtt FunctionUrl.FunctionUrl
   ResultsBucket:
     Value: !Ref ResultsBucket
   LogGroup:
