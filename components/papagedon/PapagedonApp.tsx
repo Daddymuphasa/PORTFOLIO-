@@ -8,7 +8,6 @@
  *   AudioAnalyzer -> ExperienceSignals       -> lib/papagedon/analyzer.ts
  *   ExperienceGraph -> event/state/mood      -> lib/papagedon/experienceGraph.ts
  *   Renderer with the engine's GLSL packs    -> lib/papagedon/renderer.ts
- * plus Connect Wallet on Celo and the paid AEI call panel.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -18,15 +17,9 @@ import { ExperienceGraph, type ExperienceGraphOutput } from "@/lib/papagedon/exp
 import { AudioEngine, type AudioSourceKind, type InputDevice } from "@/lib/papagedon/audioSources";
 import { PapagedonRenderer } from "@/lib/papagedon/renderer";
 import { ASSET_BASE, catalog, type PackDef, type ThemeDef } from "@/lib/papagedon/catalog";
-import { Web3Provider } from "./Web3Provider";
-import WalletButton from "./WalletButton";
-import PaidCallPanel, { type IdentityStatus } from "./PaidCallPanel";
 import { CollapsibleSection } from "./ui/Collapsible";
-import { encodeWavMono16 } from "@/lib/aei/wav";
 
 const DEMO_CYCLE_SECONDS = 20; // PAPAGEDON_DEMO_CYCLE in Runtime.cpp
-const LIVE_CLIP_SECONDS = 8;
-const FILE_CLIP_SECONDS = 20; // ~1.9 MB at 48 kHz: well under the gateway's 4 MB limit
 
 const themeById = (id: string | null | undefined): ThemeDef | undefined => catalog.themes.find((t) => t.id === id);
 const defaultPack = catalog.packs.find((p) => p.id === "SignaturePack") ?? catalog.packs[0];
@@ -56,15 +49,7 @@ const IconPulse = () => (
   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2" y="7" width="2" height="6" rx=".8" fill="currentColor" /><rect x="5.5" y="4" width="2" height="9" rx=".8" fill="currentColor" /><rect x="9" y="2" width="2" height="11" rx=".8" fill="currentColor" /><rect x="12.5" y="6" width="2" height="7" rx=".8" fill="currentColor" /></svg>
 );
 
-export default function PapagedonApp({ identity }: { identity: IdentityStatus }) {
-  return (
-    <Web3Provider>
-      <PapagedonStage identity={identity} />
-    </Web3Provider>
-  );
-}
-
-function PapagedonStage({ identity }: { identity: IdentityStatus }) {
+export default function PapagedonApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<PapagedonRenderer | null>(null);
   const audioRef = useRef<AudioEngine | null>(null);
@@ -234,23 +219,6 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
     setPlaying(a.playing);
   };
 
-  // The paid AEI call sends a WAV clip of what is playing: the gateway reads
-  // WAV only, so every source (any file format, mic, system audio) is decoded
-  // here and the server analyses exactly these samples.
-  const getClip = useCallback(async () => {
-    const a = audioRef.current;
-    if (!a?.kind) return null;
-    const { samples, sampleRate, startSeconds } = await a.captureClip(FILE_CLIP_SECONDS, LIVE_CLIP_SECONDS);
-    const wav = encodeWavMono16(samples, sampleRate);
-    const seconds = samples.length / sampleRate;
-    const at = `${Math.floor(startSeconds / 60)}:${String(Math.floor(startSeconds % 60)).padStart(2, "0")}`;
-    const label =
-      a.kind === "file"
-        ? `${seconds.toFixed(1)} s of ${a.label} from ${at}`
-        : `${seconds.toFixed(1)} s recorded live`;
-    return { blob: new Blob([wav], { type: "audio/wav" }), name: `papagedon-${a.kind}-clip.wav`, label: `${label} · ${(wav.byteLength / 1e6).toFixed(1)} MB WAV` };
-  }, []);
-
   useEffect(() => () => void audioRef.current?.close(), []);
 
   // ── Keyboard (mirrors the native player where browsers allow) ──────────────
@@ -299,7 +267,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
             <BrandLogo compact />
           </Link>
           <div className="flex items-center gap-2">
-            <WalletButton />
+            <Link href="/app" className="pgx-chip-btn">Vision mode</Link>
           </div>
         </nav>
 
@@ -424,9 +392,6 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
             </CollapsibleSection>
           </div>
 
-          <div className="pgx-col pgx-col-right">
-            <PaidCallPanel identity={identity} getClip={getClip} />
-          </div>
         </div>
       </div>
     </div>

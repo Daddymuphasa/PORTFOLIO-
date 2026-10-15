@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: PAPAGEDON Vision - OpenCV 5 crowd analysis on EC2 behind CloudFront (HTTPS), logs + metrics in CloudWatch, results in S3.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image URI pushed by deploy.sh
+  InstanceType:
+    Type: String
+    Default: t3.small
+  AllowedOrigins:
+    Type: String
+    Default: https://papagedon.com,https://www.papagedon.com
+  CloudFrontPrefixList:
+    Type: String
+    Description: Managed prefix list id for com.amazonaws.global.cloudfront.origin-facing in this region (deploy.sh looks it up)
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /papagedon/vision
+      RetentionInDays: 14
+
+  ResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: logs-and-results
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogStreams]
+                Resource: !GetAtt LogGroup.Arn
+              - Effect: Allow
+                Action: [s3:PutObject]
+                Resource: !Sub "${ResultsBucket.Arn}/*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Role]
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Vision service, reachable only from CloudFront
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourcePrefixListId: !Ref CloudFrontPrefixList
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds: [!GetAtt SecurityGroup.GroupId]
+      Tags: [{ Key: Name, Value: papagedon-vision }]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf install -y docker
+          systemctl enable --now docker
+          REGISTRY=$(echo "${ImageUri}" | cut -d/ -f1)
+          aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin "$REGISTRY"
+          docker pull "${ImageUri}"
+          docker run -d --restart=always --name vision -p 8080:8080 \
+            -e ALLOWED_ORIGINS="${AllowedOrigins}" \
+            --log-driver=awslogs --log-opt awslogs-region=${AWS::Region} \
+            --log-opt awslogs-group=/papagedon/vision --log-opt awslogs-stream=vision \
+            "${ImageUri}"
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: PAPAGEDON Vision HTTPS front door
+        Origins:
+          - Id: vision
+            DomainName: !GetAtt Instance.PublicDnsName
+            CustomOriginConfig:
+              HTTPPort: 8080
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: vision
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader
+
+  LatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Vision analysis p95 latency above 150 ms
+      Namespace: PAPAGEDON/Vision
+      MetricName: AnalyzeLatencyMs
+      Dimensions: [{ Name: Service, Value: vision }]
+      ExtendedStatistic: p95
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 150
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ServiceUrl:
+    Description: Set this as NEXT_PUBLIC_VISION_SERVICE_URL on Vercel
+    Value: !Sub "https://${Distribution.DomainName}"
+  ResultsBucket:
+    Value: !Ref ResultsBucket
+  LogGroup:
+    Value: !Ref LogGroup
