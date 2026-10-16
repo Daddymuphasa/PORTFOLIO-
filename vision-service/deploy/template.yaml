@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: PAPAGEDON Vision - OpenCV 5 crowd analysis as a Lambda container image (ECR) behind a Lambda Function URL (HTTPS). CloudWatch logs + metrics + alarm, S3 for evaluation results.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image URI pushed by deploy.sh
+  AllowedOrigins:
+    Type: String
+    Default: https://papagedon.com,https://www.papagedon.com
+  MemorySize:
+    Type: Number
+    Default: 1024
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/papagedon-vision
+      RetentionInDays: 14
+
+  ResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: logs-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "${LogGroup.Arn}:*"
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: LogGroup
+    Properties:
+      FunctionName: papagedon-vision
+      PackageType: Image
+      Code: { ImageUri: !Ref ImageUri }
+      Role: !GetAtt Role.Arn
+      Architectures: [x86_64]
+      MemorySize: !Ref MemorySize
+      Timeout: 15
+      Environment:
+        Variables:
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
+
+  FunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref Function
+      AuthType: NONE
+      # CORS is answered by the app itself (FastAPI middleware) so *.vercel.app
+      # previews and localhost can be matched by regex; no Cors block here, or
+      # browsers would see duplicate Access-Control headers.
+
+  UrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  LatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Vision analysis p95 latency above 150 ms
+      Namespace: PAPAGEDON/Vision
+      MetricName: AnalyzeLatencyMs
+      Dimensions: [{ Name: Service, Value: vision }]
+      ExtendedStatistic: p95
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 150
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Vision Lambda errors
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Ref Function }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ServiceUrl:
+    Description: Set this (without the trailing slash) as NEXT_PUBLIC_VISION_SERVICE_URL on Vercel
+    Value: !GetAtt FunctionUrl.FunctionUrl
+  ResultsBucket:
+    Value: !Ref ResultsBucket
+  LogGroup:
+    Value: !Ref LogGroup

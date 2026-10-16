@@ -12,21 +12,17 @@
     "sync:core": "node scripts/sync-papagedon-core.mjs ../PAPAGEDON-CORE-"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.104.1",
-    "@walletconnect/ethereum-provider": "^2.25.0",
-    "@x402/evm": "^2.28.0",
-    "@x402/fetch": "^2.28.0",
     "framer-motion": "^11.11.9",
     "next": "^15.5.27",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "viem": "^2.57.3",
-    "wagmi": "^3.7.7"
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^20.16.11",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "sharp": "^0.35.3",

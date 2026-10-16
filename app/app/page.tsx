@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import PapagedonApp from "@/components/papagedon/PapagedonApp";
-import { readIdentity } from "@/lib/aei/identity";
+import VisionStage from "@/components/vision/VisionStage";
 
 export const metadata: Metadata = {
   title: "APP",
   description:
-    "PAPAGEDON in the browser: play a track, use the mic or share system audio, and watch the engine's visuals react. Connect a Celo wallet for paid AEI calls.",
+    "PAPAGEDON Vision: the camera reads the crowd with OpenCV 5, the engine hears the music, and the original PAPAGEDON visualizers react to the whole room.",
 };
 
-// Re-check the on-chain identity owners at most every 5 minutes.
-export const revalidate = 300;
-
-export default async function AppPage() {
-  const identity = await readIdentity();
-  return <PapagedonApp identity={identity} />;
+export default async function AppPage({ searchParams }: { searchParams: Promise<{ engine?: string }> }) {
+  const { engine } = await searchParams;
+  return engine === "classic" ? <PapagedonApp /> : <VisionStage />;
 }
