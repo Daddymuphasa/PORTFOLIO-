@@ -221,6 +221,15 @@ export default function VisionStage() {
     };
   }, [camOn]);
 
+  // A manual pick switches to Manual and applies on the very next frame
+  // (the ref is updated here, not one render later in an effect).
+  const pickScene = (i: number) => {
+    ctl.current.auto = false;
+    ctl.current.manualIndex = i;
+    setAuto(false);
+    setManualIndex(i);
+  };
+
   // ── Audio ──────────────────────────────────────────────────────────────────
   const engine = () => (audioRef.current ??= new AudioEngine());
   const after = () => {
@@ -258,8 +267,11 @@ export default function VisionStage() {
         e.preventDefault();
         audioRef.current.togglePlayPause();
       } else if (/^[1-9]$/.test(e.key)) {
+        const i = Number(e.key) - 1;
+        ctl.current.auto = false;
+        ctl.current.manualIndex = i;
         setAuto(false);
-        setManualIndex(Number(e.key) - 1);
+        setManualIndex(i);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -286,6 +298,23 @@ export default function VisionStage() {
           <Link href="/app?engine=classic" className="pgx-chip-btn">Classic engine</Link>
         </nav>
         {glError && <div className="pgx-alert mx-4 md:mx-6">{glError}</div>}
+
+        {/* Scene picker: always visible (not inside a hover panel), uncontrolled by the HUD tick. */}
+        <div className="pointer-events-auto mx-auto mt-1 flex max-w-[960px] flex-wrap items-center justify-center gap-1.5 px-4" role="toolbar" aria-label="Scenes">
+          <button type="button" className={`pgx-chip-btn ${auto ? "is-on" : ""}`} onClick={() => setAuto(true)} aria-pressed={auto} title="Room-aware auto director (A)">Auto</button>
+          {ORIGINAL_SCENES.map((sc, i) => (
+            <button
+              key={sc.id}
+              type="button"
+              className={`pgx-chip-btn ${hud.sceneIndex === i ? "is-on" : ""}`}
+              onClick={() => pickScene(i)}
+              aria-pressed={!auto && manualIndex === i}
+              title={`${sc.name} (${i + 1})`}
+            >
+              {i + 1} · {sc.name}
+            </button>
+          ))}
+        </div>
 
         <div className="pgx-dock">
           <div className="pgx-col pgx-col-left">
@@ -314,10 +343,6 @@ export default function VisionStage() {
                 <button type="button" className={`pgx-chip-btn ${auto ? "is-on" : ""}`} onClick={() => setAuto(true)} aria-pressed={auto}>Auto (room-aware)</button>
                 <button type="button" className={`pgx-chip-btn ${!auto ? "is-on" : ""}`} onClick={() => { setManualIndex(hud.sceneIndex); setAuto(false); }} aria-pressed={!auto}>Manual override</button>
               </div>
-              <label className="pgx-field-label mt-2">Scene</label>
-              <select className="pg-select" value={auto ? hud.sceneIndex : manualIndex} onChange={(e) => { setAuto(false); setManualIndex(Number(e.target.value)); }}>
-                {ORIGINAL_SCENES.map((sc, i) => <option key={sc.id} value={i}>{i + 1} · {sc.name}</option>)}
-              </select>
               <label className="pgx-field-label mt-2">Crowd weight α = {alpha.toFixed(2)}</label>
               <input type="range" min={0} max={1} step={0.05} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="w-full" />
               <p className="pgx-keys"><kbd>C</kbd> camera · <kbd>A</kbd> auto · <kbd>1</kbd>–<kbd>9</kbd> lock scene · <kbd>H</kbd> hide UI</p>
