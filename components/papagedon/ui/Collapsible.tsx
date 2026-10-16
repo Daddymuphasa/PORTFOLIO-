@@ -43,6 +43,7 @@ export function CollapsibleSection({
   aside,
   forceOpen = false,
   defaultPinned = false,
+  pinOnInteract = false,
   className = "",
   tone = "default",
   children,
@@ -55,6 +56,8 @@ export function CollapsibleSection({
   aside?: ReactNode;
   forceOpen?: boolean;
   defaultPinned?: boolean;
+  /** Clicking anything inside the body pins the section, so a hover-opened panel can't close mid-pick. */
+  pinOnInteract?: boolean;
   className?: string;
   tone?: "default" | "gold";
   children: ReactNode;
@@ -112,7 +115,7 @@ export function CollapsibleSection({
       </div>
       <div id={id} className="pgx-collapse" data-open={open} inert={!open}>
         <div className="pgx-collapse-inner">
-          <div className="pgx-section-body">{children}</div>
+          <div className="pgx-section-body" onPointerDown={pinOnInteract ? () => { setPinned(true); setHovered(false); } : undefined}>{children}</div>
         </div>
       </div>
     </section>

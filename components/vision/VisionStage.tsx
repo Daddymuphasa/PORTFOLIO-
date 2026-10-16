@@ -6,7 +6,8 @@
  *   camera -> OpenCV 5 on AWS Lambda (NEXT_PUBLIC_VISION_SERVICE_URL)  -> CrowdMetrics
  *          \-> in-browser fallback (lib/vision/browserCrowd.ts)        /
  *   audio  -> AudioAnalyzer (port of the engine)                      -> A_t
- *   fuse() -> room energy E_t -> SceneDirector -> one of the 9 original visualizers
+ *   fuse() -> room energy E_t -> SceneDirector -> originals + immersive 3D scenes (Auto pool);
+ *   shader packs from the classic engine and every scene can be locked by key.
  *
  * Camera loss or no camera => audio-only. Operator can lock a scene at any time.
  * Privacy: frames stay in memory; only aggregate numbers are kept. The service
@@ -19,7 +20,9 @@ import { CollapsibleSection } from "@/components/papagedon/ui/Collapsible";
 import { AudioAnalyzer, emptySignals } from "@/lib/papagedon/analyzer";
 import { AudioEngine, type AudioSourceKind } from "@/lib/papagedon/audioSources";
 import { createNanoHexVisualizer } from "@/lib/vision/visualizers/nano-hex.js";
-import { ORIGINAL_SCENES } from "@/lib/vision/scenes";
+import { createPackVisualizer } from "@/lib/vision/visualizers/corePacks";
+import { createImmersiveVisualizer, type ImmersiveId } from "@/lib/vision/visualizers/immersive3d";
+import { SCENE_SECTIONS, ALL_SCENES, AUTO_POOL, AUTO_START, sceneIndexById } from "@/lib/vision/scenes";
 import { fuse, intensityGain, SceneDirector, type CrowdMetrics, type FusionOutput } from "@/lib/vision/fusion";
 import { BrowserCrowdAnalyzer, toGray } from "@/lib/vision/browserCrowd";
 import { analyzeOnService, VISION_SERVICE_URL } from "@/lib/vision/serviceClient";
@@ -33,7 +36,7 @@ type Hud = {
   crowd: CrowdMetrics | null;
   fusion: FusionOutput;
   bpm: number;
-  sceneIndex: number;
+  sceneId: string;
   fps: number;
   backend: "opencv-service" | "browser" | "off";
 };
@@ -58,15 +61,18 @@ export default function VisionStage() {
   const analyzerRef = useRef(new AudioAnalyzer());
   const crowdRef = useRef<{ m: CrowdMetrics; at: number } | null>(null);
   const browserCrowd = useRef(new BrowserCrowdAnalyzer());
-  const director = useRef(new SceneDirector());
-  const ctl = useRef({ auto: true, manualIndex: 3, alpha: 0.4, useService: Boolean(VISION_SERVICE_URL) });
+  const director = useRef(new SceneDirector(8, AUTO_POOL.map((id) => ALL_SCENES[sceneIndexById(id)]), AUTO_START));
+  const packCanvasRef = useRef<HTMLCanvasElement>(null);
+  const immCanvasRef = useRef<HTMLCanvasElement>(null);
+  const packCmd = useRef<{ seq: number; index: number | null }>({ seq: 0, index: null });
+  const ctl = useRef({ auto: true, manualId: "nano-hex", alpha: 0.4, useService: Boolean(VISION_SERVICE_URL) });
 
   const [glError, setGlError] = useState<string | null>(null);
   const [camOn, setCamOn] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
   const [preview, setPreview] = useState(true);
   const [auto, setAuto] = useState(true);
-  const [manualIndex, setManualIndex] = useState(3);
+  const [manualId, setManualId] = useState("nano-hex");
   const [alpha, setAlpha] = useState(0.4);
   const [hideUi, setHideUi] = useState(false);
   const [source, setSource] = useState<AudioSourceKind | null>(null);
@@ -74,12 +80,12 @@ export default function VisionStage() {
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [serviceDown, setServiceDown] = useState(false);
   const [hud, setHud] = useState<Hud>({
-    crowd: null, fusion: fuse({ crowd: null, audioEnergy: 0, alpha: 0.4 }), bpm: 0, sceneIndex: 3, fps: 0, backend: "off",
+    crowd: null, fusion: fuse({ crowd: null, audioEnergy: 0, alpha: 0.4 }), bpm: 0, sceneId: "nano-hex", fps: 0, backend: "off",
   });
 
   useEffect(() => {
-    ctl.current = { ...ctl.current, auto, manualIndex, alpha };
-  }, [auto, manualIndex, alpha]);
+    ctl.current = { ...ctl.current, auto, manualId, alpha };
+  }, [auto, manualId, alpha]);
 
   // ── Visualizer + render loop ───────────────────────────────────────────────
   useEffect(() => {
@@ -93,8 +99,32 @@ export default function VisionStage() {
       return;
     }
     vizRef.current = viz;
-    let current = ORIGINAL_SCENES[ctl.current.manualIndex].id;
+    let current = ctl.current.manualId;
     viz.setVariant(current);
+    // Pack and 3D renderers are created lazily, the first time one is shown.
+    let packViz: ReturnType<typeof createPackVisualizer> | null = null;
+    let immViz: ReturnType<typeof createImmersiveVisualizer> | null = null;
+    let kind = "original";
+    let seenCmd = packCmd.current.seq;
+    const show = (k: string) => {
+      kind = k;
+      canvas.style.visibility = k === "original" ? "visible" : "hidden";
+      if (packCanvasRef.current) packCanvasRef.current.style.visibility = k === "pack" ? "visible" : "hidden";
+      if (immCanvasRef.current) immCanvasRef.current.style.visibility = k === "immersive" ? "visible" : "hidden";
+    };
+    const apply = (id: string) => {
+      const sc = ALL_SCENES[sceneIndexById(id)];
+      if (!sc) return;
+      try {
+        if (sc.kind === "original") viz.setVariant(id);
+        else if (sc.kind === "pack") (packViz ??= createPackVisualizer(packCanvasRef.current!)).setPack(sc.packId!);
+        else (immViz ??= createImmersiveVisualizer(immCanvasRef.current!)).setScene(id as ImmersiveId);
+        show(sc.kind);
+      } catch (e) {
+        setGlError(e instanceof Error ? e.message : "Scene failed to start");
+      }
+    };
+    apply(current);
     let raf = 0;
     let lastHud = 0;
     let frames = 0;
@@ -107,15 +137,25 @@ export default function VisionStage() {
       const fresh = crowdRef.current && now - crowdRef.current.at < STALE_MS ? crowdRef.current.m : null;
       const f = fuse({ crowd: fresh, audioEnergy: s.energy, alpha: ctl.current.alpha });
       const d = director.current.update(f.room, now / 1000);
-      const idx = ctl.current.auto ? d.index : ctl.current.manualIndex;
-      const id = ORIGINAL_SCENES[idx].id;
+      const id = ctl.current.auto ? AUTO_POOL[d.index] : ctl.current.manualId;
       if (id !== current) {
         current = id;
-        viz.setVariant(id);
+        apply(id);
+      }
+      if (packCmd.current.seq !== seenCmd) {
+        seenCmd = packCmd.current.seq;
+        const sc = ALL_SCENES[sceneIndexById(current)];
+        const ix = packCmd.current.index;
+        if (sc?.kind === "pack") packViz?.setPack(sc.packId!, ix == null ? { advance: true } : { index: ix });
       }
       const gain = intensityGain(f.room);
       beatHold = s.beat ? 1 : Math.max(0, beatHold - 0.1);
-      viz.render({
+      if (kind === "pack") packViz?.render({ ...s, energy: Math.min(1, s.energy * gain), intensity: Math.min(1, s.intensity * gain) });
+      else if (kind === "immersive") immViz?.render({
+        energy: Math.min(1, s.energy * gain), bass: Math.min(1, s.bass * gain), mid: Math.min(1, s.mid * gain),
+        treble: Math.min(1, s.treble * gain), beat: beatHold, room: f.room, crowd: fresh?.energy ?? 0,
+      });
+      else viz.render({
         energy: Math.min(1, s.energy * gain),
         intensity: Math.min(1, s.intensity * gain),
         bass: Math.min(1, s.bass * gain),
@@ -132,7 +172,7 @@ export default function VisionStage() {
       }
       if (now - lastHud > 150) {
         lastHud = now;
-        setHud({ crowd: fresh, fusion: f, bpm: s.bpm, sceneIndex: idx, fps, backend: fresh ? fresh.source : "off" });
+        setHud({ crowd: fresh, fusion: f, bpm: s.bpm, sceneId: id, fps, backend: fresh ? fresh.source : "off" });
       }
       raf = requestAnimationFrame(loop);
     };
@@ -140,6 +180,8 @@ export default function VisionStage() {
     return () => {
       cancelAnimationFrame(raf);
       viz.dispose();
+      packViz?.dispose();
+      immViz?.dispose();
       vizRef.current = null;
     };
   }, []);
@@ -223,12 +265,20 @@ export default function VisionStage() {
 
   // A manual pick switches to Manual and applies on the very next frame
   // (the ref is updated here, not one render later in an effect).
-  const pickScene = (i: number) => {
+  // Picking the pack that is already showing advances to its next shader;
+  // `variant` jumps to one shader of a pack (Batman / Trance lists).
+  const [variant, setVariant] = useState<number | null>(null);
+  const pickScene = (id: string, v: number | null = null) => {
+    if (v != null) packCmd.current = { seq: packCmd.current.seq + 1, index: v };
+    else if (!ctl.current.auto && ctl.current.manualId === id) packCmd.current = { seq: packCmd.current.seq + 1, index: null };
+    setVariant(v);
     ctl.current.auto = false;
-    ctl.current.manualIndex = i;
+    ctl.current.manualId = id;
     setAuto(false);
-    setManualIndex(i);
+    setManualId(id);
   };
+  const pickRef = useRef(pickScene);
+  pickRef.current = pickScene;
 
   // ── Audio ──────────────────────────────────────────────────────────────────
   const engine = () => (audioRef.current ??= new AudioEngine());
@@ -266,12 +316,9 @@ export default function VisionStage() {
       else if (e.code === "Space" && audioRef.current?.kind === "file") {
         e.preventDefault();
         audioRef.current.togglePlayPause();
-      } else if (/^[1-9]$/.test(e.key)) {
-        const i = Number(e.key) - 1;
-        ctl.current.auto = false;
-        ctl.current.manualIndex = i;
-        setAuto(false);
-        setManualIndex(i);
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+        const sc = ALL_SCENES.find((x) => x.key === e.key.toUpperCase());
+        if (sc) pickRef.current(sc.id);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -279,11 +326,13 @@ export default function VisionStage() {
   }, []);
 
   const { crowd, fusion, fps, backend } = hud;
-  const scene = ORIGINAL_SCENES[hud.sceneIndex];
+  const scene = ALL_SCENES[sceneIndexById(hud.sceneId)] ?? ALL_SCENES[3];
 
   return (
     <div className="pgx-root">
       <canvas ref={canvasRef} className="pgx-stage" />
+      <canvas ref={packCanvasRef} className="pgx-stage" style={{ visibility: "hidden" }} />
+      <canvas ref={immCanvasRef} className="pgx-stage" style={{ visibility: "hidden" }} />
       <video
         ref={videoRef}
         muted
@@ -298,23 +347,6 @@ export default function VisionStage() {
           <Link href="/app?engine=classic" className="pgx-chip-btn">Classic engine</Link>
         </nav>
         {glError && <div className="pgx-alert mx-4 md:mx-6">{glError}</div>}
-
-        {/* Scene picker: always visible (not inside a hover panel), uncontrolled by the HUD tick. */}
-        <div className="pointer-events-auto mx-auto mt-1 flex max-w-[960px] flex-wrap items-center justify-center gap-1.5 px-4" role="toolbar" aria-label="Scenes">
-          <button type="button" className={`pgx-chip-btn ${auto ? "is-on" : ""}`} onClick={() => setAuto(true)} aria-pressed={auto} title="Room-aware auto director (A)">Auto</button>
-          {ORIGINAL_SCENES.map((sc, i) => (
-            <button
-              key={sc.id}
-              type="button"
-              className={`pgx-chip-btn ${hud.sceneIndex === i ? "is-on" : ""}`}
-              onClick={() => pickScene(i)}
-              aria-pressed={!auto && manualIndex === i}
-              title={`${sc.name} (${i + 1})`}
-            >
-              {i + 1} · {sc.name}
-            </button>
-          ))}
-        </div>
 
         <div className="pgx-dock">
           <div className="pgx-col pgx-col-left">
@@ -341,15 +373,41 @@ export default function VisionStage() {
             <CollapsibleSection title="Director" summary={<span>{auto ? "Auto" : "Manual"} · {scene.name}</span>}>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" className={`pgx-chip-btn ${auto ? "is-on" : ""}`} onClick={() => setAuto(true)} aria-pressed={auto}>Auto (room-aware)</button>
-                <button type="button" className={`pgx-chip-btn ${!auto ? "is-on" : ""}`} onClick={() => { setManualIndex(hud.sceneIndex); setAuto(false); }} aria-pressed={!auto}>Manual override</button>
+                <button type="button" className={`pgx-chip-btn ${!auto ? "is-on" : ""}`} onClick={() => { setManualId(hud.sceneId); ctl.current.manualId = hud.sceneId; setAuto(false); }} aria-pressed={!auto}>Manual override</button>
               </div>
               <label className="pgx-field-label mt-2">Crowd weight α = {alpha.toFixed(2)}</label>
               <input type="range" min={0} max={1} step={0.05} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="w-full" />
-              <p className="pgx-keys"><kbd>C</kbd> camera · <kbd>A</kbd> auto · <kbd>1</kbd>–<kbd>9</kbd> lock scene · <kbd>H</kbd> hide UI</p>
+              <p className="pgx-keys"><kbd>C</kbd> camera · <kbd>A</kbd> auto · <kbd>1</kbd>–<kbd>9</kbd>/letters lock scene · <kbd>H</kbd> hide UI</p>
             </CollapsibleSection>
           </div>
 
           <div className="pgx-col pgx-col-right">
+            <CollapsibleSection title="Shaders" defaultPinned pinOnInteract summary={<span>{auto ? "Auto" : "Manual"} · {scene.name}</span>}>
+              <div className="pgx-scenes max-h-[46vh] overflow-y-auto pr-1" role="toolbar" aria-label="Shaders">
+                <button type="button" className={`pgx-chip-btn ${auto ? "is-on" : ""}`} onClick={() => setAuto(true)} aria-pressed={auto} title="Room-aware auto director (A)">Auto (room-aware)</button>
+                {SCENE_SECTIONS.map((sec) => (
+                  <div key={sec.title}>
+                    <label className="pgx-field-label mt-2">{sec.title}</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {sec.scenes.map((sc) => (
+                        <button key={sc.id} type="button" data-scene={sc.id}
+                          className={`pgx-chip-btn ${hud.sceneId === sc.id && (sec.variants ? variant === null : true) ? "is-on" : ""}`}
+                          onClick={() => pickScene(sc.id)} aria-pressed={!auto && manualId === sc.id}
+                          title={`${sc.name} (${sc.key})${sc.kind === "pack" ? " · press again for the next shader" : ""}`}>
+                          {sc.key} · {sc.name}{sec.variants ? " (cycle)" : ""}
+                        </button>
+                      ))}
+                      {sec.variants?.map((v, i) => (
+                        <button key={v} type="button" data-variant={`${sec.variantScene}#${i}`}
+                          className={`pgx-chip-btn ${hud.sceneId === sec.variantScene && variant === i ? "is-on" : ""}`}
+                          onClick={() => pickScene(sec.variantScene!, i)}>{v}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="pgx-keys mt-2"><kbd>1</kbd>–<kbd>9</kbd> originals · <kbd>T</kbd> Trance · <kbd>B</kbd> Batman · <kbd>S</kbd> <kbd>F</kbd> <kbd>P</kbd> <kbd>Y</kbd> packs (again = next) · <kbd>N</kbd> <kbd>G</kbd> <kbd>R</kbd> <kbd>L</kbd> 3D · <kbd>A</kbd> auto · <kbd>C</kbd> camera · <kbd>H</kbd> hide UI</p>
+            </CollapsibleSection>
             <CollapsibleSection title="Room read" summary={<span className="font-mono text-[11px]">E {Math.round(fusion.room * 100)} · {fusion.mode === "fused" ? "sight + sound" : "audio-only"}</span>}>
               <div className="grid gap-2">
                 <Meter label="Motion" value={crowd?.motion ?? 0} />

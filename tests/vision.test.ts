@@ -51,3 +51,13 @@ test("browser analyzer sees motion on changing frames, none on static", () => {
   for (let i = 0; i < 10; i++) m = a.update(new Float32Array(100).map(() => (i % 2 ? 200 : 20))).motion;
   assert.ok(m > 0.5);
 });
+
+test("every Vision scene has a unique key and none collide with reserved keys", async () => {
+  const { ALL_SCENES, AUTO_POOL } = await import("../lib/vision/scenes");
+  const keys = ALL_SCENES.map((s) => s.key);
+  assert.equal(new Set(keys).size, keys.length);
+  for (const k of ["A", "C", "H"]) assert.ok(!keys.includes(k));
+  assert.equal(ALL_SCENES.find((s) => s.key === "T")?.name, "Trance");
+  assert.equal(ALL_SCENES.find((s) => s.key === "B")?.name, "Batman");
+  for (const id of AUTO_POOL) assert.ok(ALL_SCENES.some((s) => s.id === id));
+});
