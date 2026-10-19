@@ -22,6 +22,8 @@ import { AudioAnalyzer, type AudioFrame } from "./analyzer";
 export type AudioSourceKind = "file" | "input" | "loopback";
 
 export type InputDevice = { deviceId: string; label: string };
+const MAX_AUDIO_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_AUDIO_DURATION_SECONDS = 15 * 60;
 
 export class AudioEngine {
   readonly ctx: AudioContext;
@@ -70,8 +72,12 @@ export class AudioEngine {
 
   // ── "file" ──────────────────────────────────────────────────────────────────
   async loadFile(file: File): Promise<void> {
+    if (file.size > MAX_AUDIO_FILE_BYTES) throw new Error("Audio file is too large (50 MB maximum).");
     await this.ctx.resume();
     const buffer = await this.ctx.decodeAudioData(await file.arrayBuffer());
+    if (!Number.isFinite(buffer.duration) || buffer.duration > MAX_AUDIO_DURATION_SECONDS) {
+      throw new Error("Audio file is too long (15 minutes maximum).");
+    }
     this.stopCurrent();
     this.fileBuffer = buffer;
     this.file = file;

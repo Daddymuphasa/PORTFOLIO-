@@ -30,10 +30,21 @@ export const IDENTITY = {
   },
 } as const;
 
-const trimSlash = (s: string) => s.replace(/\/+$/, "");
+function publicHttpsOrigin(value: string): string {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) return "";
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
 
-export const AEI_GATEWAY_URL = trimSlash(process.env.NEXT_PUBLIC_AEI_GATEWAY_URL ?? "");
-export const AEI_ENDPOINT_PATH = process.env.NEXT_PUBLIC_AEI_ENDPOINT_PATH || "/v1/aei/signals";
+export const AEI_GATEWAY_URL = publicHttpsOrigin(process.env.NEXT_PUBLIC_AEI_GATEWAY_URL ?? "");
+const configuredPath = process.env.NEXT_PUBLIC_AEI_ENDPOINT_PATH || "/v1/aei/signals";
+export const AEI_ENDPOINT_PATH = /^\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(configuredPath)
+  ? configuredPath
+  : "/v1/aei/signals";
 /** Hard ceiling the UI will ever let a wallet sign for one call, in USDC. */
 export const AEI_MAX_PRICE_USDC = process.env.NEXT_PUBLIC_AEI_MAX_PRICE_USDC || "0.05";
 export const CELO_RPC_URL = process.env.NEXT_PUBLIC_CELO_RPC_URL || "https://forno.celo.org";
