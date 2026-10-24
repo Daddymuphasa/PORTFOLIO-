@@ -1,0 +1,538 @@
+"use client";
+
+/**
+ * /aei operator surface. The picture is the Vision visualizers. The decisions
+ * are the rule director (and, later, the Meta stub behind /api/aei/cue).
+ * This file does not import the Meta provider, so MODEL_API_KEY stays on the server.
+ */
+import { useEffect, useRef, useState } from "react";
+import { AudioAnalyzer, emptySignals, type ExperienceSignals } from "@/lib/papagedon/analyzer";
+import { AudioEngine } from "@/lib/papagedon/audioSources";
+import { aeiSceneById, AEI_SCENES } from "@/lib/aei/scenes";
+import { applyOverride, cueToRenderParams, RuleDirector } from "@/lib/aei/director";
+import { sampleEnergyArc, THEMES } from "@/lib/aei/themes";
+import type { Cue, DirectorSignals, ManualOverride } from "@/lib/aei/types";
+import { createAeiRenderer } from "./renderer";
+
+type Hud = {
+  energy: number;
+  bass: number;
+  bpm: number;
+  onset: boolean;
+  progress: number;
+  arc: number;
+  clock: number;
+  scene: string;
+  sceneName: string;
+  intensity: number;
+  strobe: number;
+  paletteShift: number;
+  palette: [string, string, string];
+  asset: string | null;
+  reason: string;
+  source: Cue["source"];
+};
+
+const SILENT: DirectorSignals = {
+  energy: 0,
+  bass: 0,
+  mid: 0,
+  treble: 0,
+  bpm: 0,
+  onset: false,
+  tension: 0,
+  progress: 0,
+  now: 0,
+};
+
+function formatClock(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+function cueSignature(cue: Cue): string {
+  return `${cue.scene}|${cue.source}|${cue.asset ?? ""}|${cue.strobe >= 0.45 ? "hit" : "steady"}`;
+}
+
+async function measureDuration(file: File): Promise<number> {
+  const ctx = new AudioContext();
+  try {
+    const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+    return decoded.duration;
+  } catch {
+    return 0;
+  } finally {
+    await ctx.close();
+  }
+}
+
+export default function AeiStage() {
+  const originalRef = useRef<HTMLCanvasElement>(null);
+  const immersiveRef = useRef<HTMLCanvasElement>(null);
+  const washRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<AudioEngine | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const themeIdRef = useRef(THEMES[0].id);
+  const overrideRef = useRef<ManualOverride>({
+    enabled: false,
+    scene: AEI_SCENES[0].id,
+    intensity: 0.4,
+    strobe: 0,
+    paletteShift: 0,
+  });
+  const durationRef = useRef(0);
+  const startedRef = useRef(0);
+  const snapshotRef = useRef<{ themeId: string; signals: DirectorSignals }>({ themeId: THEMES[0].id, signals: SILENT });
+  const latestCueRef = useRef<Cue | null>(null);
+
+  const [themeId, setThemeId] = useState(THEMES[0].id);
+  const [override, setOverride] = useState<ManualOverride>(overrideRef.current);
+  const [playing, setPlaying] = useState(false);
+  const [sourceLabel, setSourceLabel] = useState("No audio yet");
+  const [sourceKind, setSourceKind] = useState<string | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [glError, setGlError] = useState<string | null>(null);
+  const [log, setLog] = useState<Cue[]>([]);
+  const [metaReady, setMetaReady] = useState<boolean | null>(null);
+  const [metaMessage, setMetaMessage] = useState<string | null>(null);
+  const [metaBusy, setMetaBusy] = useState(false);
+  const [hud, setHud] = useState<Hud>({
+    energy: 0,
+    bass: 0,
+    bpm: 0,
+    onset: false,
+    progress: 0,
+    arc: sampleEnergyArc(THEMES[0].energyArc, 0),
+    clock: 0,
+    scene: AEI_SCENES[0].id,
+    sceneName: AEI_SCENES[0].name,
+    intensity: 0.22,
+    strobe: 0,
+    paletteShift: 0,
+    palette: ["#1B1430", "#F2A65A", "#E85D75"],
+    asset: THEMES[0].motifs[0] ?? null,
+    reason: "waiting for audio",
+    source: "rules",
+  });
+
+  themeIdRef.current = themeId;
+  overrideRef.current = override;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/aei/status")
+      .then((response) => (response.ok ? response.json() : { metaConfigured: false }))
+      .then((data: { metaConfigured?: boolean }) => {
+        if (!cancelled) setMetaReady(Boolean(data.metaConfigured));
+      })
+      .catch(() => {
+        if (!cancelled) setMetaReady(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const original = originalRef.current;
+    const immersive = immersiveRef.current;
+    if (!original || !immersive) return;
+    const audio = new AudioEngine();
+    const analyzer = new AudioAnalyzer();
+    const director = new RuleDirector();
+    audioRef.current = audio;
+    let renderer: ReturnType<typeof createAeiRenderer> | null = null;
+    let glFailed = false;
+    try {
+      renderer = createAeiRenderer(original, immersive);
+    } catch (error) {
+      setGlError(error instanceof Error ? error.message : "WebGL failed to start");
+      glFailed = true;
+    }
+    let raf = 0;
+    let lastHud = 0;
+    let lastLog = 0;
+    let lastSig = "";
+    const loop = (nowMs: number) => {
+      const frame = audio.readFrame();
+      const analysis: ExperienceSignals = frame ? analyzer.update(frame) : emptySignals();
+      const theme = THEMES.find((entry) => entry.id === themeIdRef.current) ?? THEMES[0];
+      const duration = durationRef.current;
+      const fileClock = audio.kind === "file" ? audio.filePosition() : 0;
+      const liveClock = audio.kind && audio.kind !== "file" ? Math.max(0, audio.ctx.currentTime - startedRef.current) : 0;
+      const clock = audio.kind === "file" ? fileClock : liveClock;
+      const progress = duration > 0 ? (fileClock % duration) / duration : 0;
+      const signals: DirectorSignals = {
+        energy: analysis.energy,
+        bass: analysis.bass,
+        mid: analysis.mid,
+        treble: analysis.treble,
+        bpm: analysis.bpm,
+        onset: analysis.beat,
+        tension: analysis.tension,
+        progress,
+        now: audio.ctx.currentTime,
+      };
+      snapshotRef.current = { themeId: theme.id, signals };
+      const directed = director.update(signals, theme);
+      const cue = applyOverride(directed, overrideRef.current);
+      latestCueRef.current = cue;
+      const params = cueToRenderParams(cue, theme);
+      const wash = washRef.current;
+      if (wash) {
+        const [a, b, c] = params.palette;
+        wash.style.background = `linear-gradient(125deg, ${a} 0%, ${b} 52%, ${c} 100%)`;
+        wash.style.opacity = String(0.16 + params.intensity * 0.32);
+      }
+      const flash = flashRef.current;
+      if (flash) {
+        flash.style.background = params.palette[1];
+        flash.style.opacity = String(Math.min(0.4, params.strobe * 0.42));
+      }
+      if (renderer && !glFailed) {
+        try {
+          renderer.render(params, analysis, analysis.beat);
+        } catch (error) {
+          glFailed = true;
+          setGlError(error instanceof Error ? error.message : "Scene failed to start");
+        }
+      }
+      const sig = `${cueSignature(cue)}|e${Math.round(analysis.energy * 5)}`;
+      if (sig !== lastSig && (lastSig === "" || nowMs - lastLog > 600)) {
+        lastSig = sig;
+        lastLog = nowMs;
+        setLog((prev) => [cue, ...prev].slice(0, 24));
+      }
+      if (nowMs - lastHud > 120) {
+        lastHud = nowMs;
+        const scene = aeiSceneById(cue.scene);
+        setHud({
+          energy: analysis.energy,
+          bass: analysis.bass,
+          bpm: analysis.bpm,
+          onset: analysis.beat,
+          progress,
+          arc: sampleEnergyArc(theme.energyArc, progress),
+          clock,
+          scene: cue.scene,
+          sceneName: scene?.name ?? cue.scene,
+          intensity: cue.intensity,
+          strobe: cue.strobe,
+          paletteShift: cue.paletteShift,
+          palette: params.palette,
+          asset: cue.asset,
+          reason: cue.reason,
+          source: cue.source,
+        });
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      renderer?.dispose();
+      audioRef.current = null;
+      void audio.close();
+    };
+  }, []);
+
+  async function loadFile(file: File) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setSourceError(null);
+    try {
+      await audio.ctx.resume();
+      durationRef.current = await measureDuration(file);
+      await audio.loadFile(file);
+      startedRef.current = audio.ctx.currentTime;
+      setSourceLabel(file.name);
+      setSourceKind("file");
+      setPlaying(true);
+    } catch (error) {
+      setSourceError(error instanceof Error ? error.message : "Could not read that audio");
+    }
+  }
+
+  async function loadSample() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setSourceError(null);
+    try {
+      await audio.ctx.resume();
+      const response = await fetch("/aei/sample-kick.wav");
+      if (!response.ok) throw new Error("Sample file is missing");
+      const blob = await response.blob();
+      await loadFile(new File([blob], "sample-kick.wav", { type: "audio/wav" }));
+    } catch (error) {
+      setSourceError(error instanceof Error ? error.message : "Could not load the sample");
+    }
+  }
+
+  async function useMic() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setSourceError(null);
+    try {
+      await audio.useInput();
+      durationRef.current = 0;
+      startedRef.current = audio.ctx.currentTime;
+      setSourceLabel(audio.label || "Microphone");
+      setSourceKind("input");
+      setPlaying(true);
+    } catch (error) {
+      setSourceError(error instanceof Error ? error.message : "Microphone was blocked");
+    }
+  }
+
+  function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio || audio.kind !== "file") return;
+    audio.togglePlayPause();
+    setPlaying(audio.playing);
+  }
+
+  function setManual(next: Partial<ManualOverride>) {
+    setOverride((current) => ({ ...current, ...next }));
+  }
+
+  function enableOverride() {
+    const cue = latestCueRef.current;
+    setOverride({
+      enabled: true,
+      scene: cue?.scene ?? AEI_SCENES[0].id,
+      intensity: cue?.intensity ?? 0.4,
+      strobe: cue?.strobe ?? 0,
+      paletteShift: cue?.paletteShift ?? 0,
+    });
+  }
+
+  async function askMeta() {
+    setMetaBusy(true);
+    setMetaMessage(null);
+    try {
+      const response = await fetch("/api/aei/cue", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(snapshotRef.current),
+      });
+      const data = (await response.json()) as { error?: string; cue?: Cue };
+      if (!response.ok || !data.cue) {
+        setMetaMessage(data.error || "Meta request failed");
+        return;
+      }
+      setLog((prev) => [data.cue as Cue, ...prev].slice(0, 24));
+      setMetaMessage(`Logged a Meta cue for ${data.cue.scene}. Rules still drive the picture.`);
+    } catch {
+      setMetaMessage("Meta request failed");
+    } finally {
+      setMetaBusy(false);
+    }
+  }
+
+  const theme = THEMES.find((entry) => entry.id === themeId) ?? THEMES[0];
+  const shownScene = override.enabled ? override.scene : hud.scene;
+  const shownIntensity = override.enabled ? override.intensity : hud.intensity;
+  const shownStrobe = override.enabled ? override.strobe : hud.strobe;
+  const shownShift = override.enabled ? override.paletteShift : hud.paletteShift;
+
+  return (
+    <main className="fixed inset-0 bg-black text-foreground">
+      <canvas ref={originalRef} className="absolute inset-0 h-full w-full" aria-hidden />
+      <canvas ref={immersiveRef} className="absolute inset-0 h-full w-full" style={{ visibility: "hidden" }} aria-hidden />
+      <div ref={washRef} className="pointer-events-none absolute inset-0 mix-blend-soft-light" aria-hidden />
+      <div ref={flashRef} className="pointer-events-none absolute inset-0 mix-blend-screen" aria-hidden />
+
+      <aside className="absolute inset-x-0 bottom-0 z-10 max-h-[46vh] overflow-y-auto border-t border-white/10 bg-[#0b110e]/88 p-4 backdrop-blur-md md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[22rem] md:border-l md:border-t-0">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="pg-label">PAPAGEDON · AEI</p>
+            <h1 className="mt-1 font-heading text-lg leading-tight">Audio Experience Intelligence</h1>
+          </div>
+          <a href="/" className="pg-label shrink-0 pt-1 underline decoration-white/20 underline-offset-4">
+            Portfolio
+          </a>
+        </div>
+
+        <section className="space-y-2" aria-label="Audio">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="pg-btn pg-btn-primary" onClick={() => void loadSample()}>
+              Play sample
+            </button>
+            <button type="button" className="pg-btn" onClick={() => fileRef.current?.click()}>
+              Load audio
+            </button>
+            <button type="button" className="pg-btn" onClick={() => void useMic()}>
+              Mic
+            </button>
+            <button type="button" className="pg-btn" onClick={togglePlay} disabled={sourceKind !== "file"}>
+              {playing && sourceKind === "file" ? "Pause" : "Play"}
+            </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="audio/*"
+            aria-label="Audio file"
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void loadFile(file);
+            }}
+          />
+          <p className="text-xs text-muted">
+            {sourceLabel}
+            {sourceKind === "file" ? ` · ${formatClock(hud.clock)}` : ""}
+          </p>
+          {sourceError ? <p className="text-xs text-[#e7b8b0]">{sourceError}</p> : null}
+          {glError ? <p className="text-xs text-[#e7b8b0]">{glError}</p> : null}
+        </section>
+
+        <section className="mt-4" aria-label="Theme">
+          <label className="block">
+            <span className="pg-label">Theme</span>
+            <select
+              className="pg-select mt-1"
+              value={themeId}
+              onChange={(event) => setThemeId(event.target.value)}
+            >
+              {THEMES.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{theme.mood}</p>
+        </section>
+
+        <section className="mt-4 space-y-2" aria-label="Live readout">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-heading text-sm">{hud.sceneName}</p>
+            <span className={`pgx-live-dot ${hud.onset ? "is-on" : ""}`} title={hud.onset ? "Onset" : "Between onsets"} />
+          </div>
+          <Meter label="Energy" value={hud.energy} />
+          <div className="flex justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+            <span>BPM {hud.bpm ? Math.round(hud.bpm) : "—"}</span>
+            <span>Arc {hud.arc.toFixed(2)}</span>
+            <span>{hud.source}</span>
+          </div>
+          <div className="flex gap-1.5" aria-label="Palette">
+            {hud.palette.map((color) => (
+              <span key={color} className="h-3 flex-1 rounded-sm border border-white/15" style={{ background: color }} />
+            ))}
+          </div>
+          <p className="text-xs leading-relaxed text-muted">
+            {hud.reason}
+            {hud.asset ? ` · ${hud.asset}` : ""}
+          </p>
+        </section>
+
+        <section className="mt-4 space-y-2" aria-label="Manual override">
+          <div className="flex items-center justify-between">
+            <span className="pg-label">Manual override</span>
+            <button
+              type="button"
+              className={`pg-btn ${override.enabled ? "pg-btn-on" : ""}`}
+              aria-pressed={override.enabled}
+              onClick={() => (override.enabled ? setManual({ enabled: false }) : enableOverride())}
+            >
+              {override.enabled ? "On" : "Off"}
+            </button>
+          </div>
+          <label className="block">
+            <span className="pg-label">Scene</span>
+            <select
+              className="pg-select mt-1"
+              value={shownScene}
+              disabled={!override.enabled}
+              onChange={(event) => setManual({ scene: event.target.value })}
+            >
+              {AEI_SCENES.map((scene) => (
+                <option key={scene.id} value={scene.id}>
+                  {scene.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Slider label="Intensity" value={shownIntensity} disabled={!override.enabled} onChange={(intensity) => setManual({ intensity })} />
+          <Slider label="Strobe" value={shownStrobe} disabled={!override.enabled} onChange={(strobe) => setManual({ strobe })} />
+          <Slider label="Palette shift" value={shownShift} disabled={!override.enabled} onChange={(paletteShift) => setManual({ paletteShift })} />
+        </section>
+
+        <section className="mt-4" aria-label="Director">
+          <p className="pg-label">Director</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Rules are live.
+            {metaReady == null ? " Checking the Meta key…" : metaReady ? " Meta key is set; the cue transport is still a stub." : " Meta key is not set."}
+            {" "}
+            A Meta reply is written to the log and does not replace the rules.
+          </p>
+          <button type="button" className="pg-btn mt-2" onClick={() => void askMeta()} disabled={metaBusy}>
+            {metaBusy ? "Asking…" : "Request Meta cue"}
+          </button>
+          {metaMessage ? <p className="mt-2 text-xs text-muted">{metaMessage}</p> : null}
+        </section>
+
+        <section className="mt-4" aria-label="Cue log">
+          <p className="pg-label">Cue log</p>
+          <ol className="mt-2 max-h-40 space-y-1.5 overflow-y-auto font-mono text-[10px] leading-relaxed text-[#d5ddd6]">
+            {log.length === 0 ? <li className="text-muted">Cues appear as the director commits to a look.</li> : null}
+            {log.map((cue) => (
+              <li key={cue.id}>
+                <span className="text-muted">{formatClock(cue.at)}</span> {cue.source} {aeiSceneById(cue.scene)?.name ?? cue.scene}{" "}
+                I{cue.intensity.toFixed(2)} S{cue.strobe.toFixed(2)}
+                {cue.asset ? ` ${cue.asset}` : ""}
+              </li>
+            ))}
+          </ol>
+        </section>
+      </aside>
+    </main>
+  );
+}
+
+function Meter({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
+  return (
+    <div className="grid grid-cols-[64px_1fr_28px] items-center gap-2">
+      <span className="pg-label !tracking-[0.12em]">{label}</span>
+      <div className="pgx-meter">
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-right font-mono text-[10px] text-muted">{pct}</span>
+    </div>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-center justify-between">
+        <span className="pg-label">{label}</span>
+        <span className="font-mono text-[10px] text-muted">{value.toFixed(2)}</span>
+      </span>
+      <input
+        className="mt-1 w-full accent-[#5aa98a]"
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
+  );
+}
