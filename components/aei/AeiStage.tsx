@@ -5,12 +5,14 @@
  * are the rule director (and, later, the Meta stub behind /api/aei/cue).
  * This file does not import the Meta provider, so MODEL_API_KEY stays on the server.
  */
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AudioAnalyzer, emptySignals, type ExperienceSignals } from "@/lib/papagedon/analyzer";
 import { AudioEngine } from "@/lib/papagedon/audioSources";
 import { aeiSceneById, AEI_SCENES } from "@/lib/aei/scenes";
 import { applyOverride, cueToRenderParams, RuleDirector } from "@/lib/aei/director";
 import { sampleEnergyArc, THEMES } from "@/lib/aei/themes";
+import type { AeiStatusBody, CrowdMeter } from "@/lib/aei/statusTypes";
 import type { Cue, DirectorSignals, ManualOverride } from "@/lib/aei/types";
 import { createAeiRenderer } from "./renderer";
 
@@ -94,7 +96,8 @@ export default function AeiStage() {
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [glError, setGlError] = useState<string | null>(null);
   const [log, setLog] = useState<Cue[]>([]);
-  const [metaReady, setMetaReady] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<AeiStatusBody | null>(null);
+  const [crowd, setCrowd] = useState<CrowdMeter | null>(null);
   const [metaMessage, setMetaMessage] = useState<string | null>(null);
   const [metaBusy, setMetaBusy] = useState(false);
   const [hud, setHud] = useState<Hud>({
@@ -121,16 +124,27 @@ export default function AeiStage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/aei/status")
-      .then((response) => (response.ok ? response.json() : { metaConfigured: false }))
-      .then((data: { metaConfigured?: boolean }) => {
-        if (!cancelled) setMetaReady(Boolean(data.metaConfigured));
+    const pull = () => {
+      fetch("/api/aei/status")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: AeiStatusBody | null) => {
+          if (!cancelled) setStatus(data);
+        })
+        .catch(() => {
+          if (!cancelled) setStatus(null);
+        });
+    };
+    pull();
+    const timer = setInterval(pull, 5000);
+    fetch("/api/aei/crowd")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: CrowdMeter | null) => {
+        if (!cancelled && data) setCrowd(data);
       })
-      .catch(() => {
-        if (!cancelled) setMetaReady(false);
-      });
+      .catch(() => undefined);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, []);
 
@@ -203,6 +217,19 @@ export default function AeiStage() {
         lastSig = sig;
         lastLog = nowMs;
         setLog((prev) => [cue, ...prev].slice(0, 24));
+        void fetch("/api/aei/session", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            at: cue.at,
+            scene: cue.scene,
+            source: cue.source,
+            intensity: cue.intensity,
+            strobe: cue.strobe,
+            asset: cue.asset,
+            reason: cue.reason,
+          }),
+        }).catch(() => undefined);
       }
       if (nowMs - lastHud > 120) {
         lastHud = nowMs;
@@ -269,7 +296,7 @@ export default function AeiStage() {
     }
   }
 
-  async function useMic() {
+  async function listenToMic() {
     const audio = audioRef.current;
     if (!audio) return;
     setSourceError(null);
@@ -349,9 +376,9 @@ export default function AeiStage() {
             <p className="pg-label">PAPAGEDON · AEI</p>
             <h1 className="mt-1 font-heading text-lg leading-tight">Audio Experience Intelligence</h1>
           </div>
-          <a href="/" className="pg-label shrink-0 pt-1 underline decoration-white/20 underline-offset-4">
+          <Link href="/" className="pg-label shrink-0 pt-1 underline decoration-white/20 underline-offset-4">
             Portfolio
-          </a>
+          </Link>
         </div>
 
         <section className="space-y-2" aria-label="Audio">
@@ -362,7 +389,7 @@ export default function AeiStage() {
             <button type="button" className="pg-btn" onClick={() => fileRef.current?.click()}>
               Load audio
             </button>
-            <button type="button" className="pg-btn" onClick={() => void useMic()}>
+            <button type="button" className="pg-btn" onClick={() => void listenToMic()}>
               Mic
             </button>
             <button type="button" className="pg-btn" onClick={togglePlay} disabled={sourceKind !== "file"}>
@@ -464,11 +491,28 @@ export default function AeiStage() {
         <section className="mt-4" aria-label="Director">
           <p className="pg-label">Director</p>
           <p className="mt-1 text-xs leading-relaxed text-muted">
-            Rules are live.
-            {metaReady == null ? " Checking the Meta key…" : metaReady ? " Meta key is set; the cue transport is still a stub." : " Meta key is not set."}
+            Rules drive the picture.
+            {status == null ? " Checking providers…" : status.metaConfigured ? " Model key is present." : " Model key is not set, so providers stay on mock data."}
             {" "}
-            A Meta reply is written to the log and does not replace the rules.
+            A model reply is written to the log and does not replace the rules.
           </p>
+          <ul className="mt-2 space-y-1 font-mono text-[10px] leading-relaxed text-[#d5ddd6]">
+            {(status?.providers ?? []).map((provider) => (
+              <li key={provider.id}>
+                {provider.id} · {provider.mode} · key {provider.keyPresent ? "present" : "missing"}
+                {provider.lastLatencyMs == null ? "" : ` · ${provider.lastLatencyMs}ms`}
+                {provider.lastError ? ` · ${provider.lastError}` : ""}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 font-mono text-[10px] text-muted">
+            Session {status?.usage.calls ?? 0} calls · {status?.usage.images ?? 0} images · {status?.usage.tokens ?? 0} tokens
+          </p>
+          {crowd ? (
+            <p className="mt-1 font-mono text-[10px] text-muted">
+              Crowd meter {crowd.label} · {crowd.personCount} · {crowd.coveragePercent}% · density {crowd.densityScore}
+            </p>
+          ) : null}
           <button type="button" className="pg-btn mt-2" onClick={() => void askMeta()} disabled={metaBusy}>
             {metaBusy ? "Asking…" : "Request Meta cue"}
           </button>

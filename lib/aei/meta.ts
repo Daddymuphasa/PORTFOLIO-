@@ -9,6 +9,7 @@
  *   - SAM 3.1: segmentation, once a frame source exists
  *   - Muse Image: motif textures addressed by `asset`
  */
+import { usableModelKey, type AeiEnv } from "./config";
 import { AEI_SCENE_IDS } from "./scenes";
 import type { Cue, DirectorSignals, ThemePack } from "./types";
 
@@ -139,4 +140,25 @@ export class MetaDirector {
     );
     return parseMetaCue(raw, now);
   }
+}
+
+/**
+ * Shared gate for spike scripts and the provider adapters.
+ * No key (or an invalid one) runs `mock` and does not call `live`.
+ * `validate` checks our result shape either way.
+ */
+export async function runModelCall<T>(args: {
+  env?: AeiEnv;
+  mock: () => T | Promise<T>;
+  live: (apiKey: string) => Promise<unknown>;
+  validate: (raw: unknown) => T;
+}): Promise<{ mode: "mock" | "live"; value: T; latencyMs: number }> {
+  const started = Date.now();
+  const apiKey = usableModelKey(args.env);
+  if (!apiKey) {
+    const value = args.validate(await args.mock());
+    return { mode: "mock", value, latencyMs: Date.now() - started };
+  }
+  const value = args.validate(await args.live(apiKey));
+  return { mode: "live", value, latencyMs: Date.now() - started };
 }

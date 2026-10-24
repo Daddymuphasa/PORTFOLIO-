@@ -70,19 +70,37 @@ npm test
 npm run build
 ```
 
-## When the Meta key arrives
+## Spike scripts
 
-1. Set `MODEL_API_KEY` in the server environment (`.env.local` or the host).
-   Do not prefix it with `NEXT_PUBLIC_`.
-2. Replace `unwiredTransport` in `lib/aei/meta.ts` with one request that returns
-   a `MetaCueDraft`: `scene`, `paletteShift`, `intensity`, `strobe`, optional
-   `asset`, optional `reason`. `parseMetaCue` already rejects anything outside
-   the scene pool or outside 0..1.
-3. Muse Spark is the call for that structured cue. SAM 3.1 (segmentation) and
-   Muse Image (motif textures stored against `asset`) belong behind the same
-   provider, off the frame loop.
-4. Point the stage at accepted Meta cues when you want them to drive the
-   picture. Today they are log-only, so a bad draft cannot take the show.
+Fixtures are geometric images in `scripts/aei/fixtures/` (a poster and an ellipse
+frame). Nothing in that folder is a photograph. With `MODEL_API_KEY` unset, each
+script stays in mock mode and writes under `out/` (gitignored), including one
+line per call in `out/cost-log.jsonl`.
 
-Still open after that: turning a flyer or banner into a theme pack, and letting
-one event's cues inform the next.
+```bash
+npm run aei:spike:theme      # flyer + brief -> out/theme-pack.json
+npm run aei:spike:crowd      # synthetic frame -> out/crowd.json and out/crowd-overlay.png
+npm run aei:spike:texture    # theme JSON -> out/texture.png
+npm run aei:smoke            # pass/fail table for theme, segmentation, image, status
+```
+
+Live calls share `runModelCall` in `lib/aei/meta.ts`. The URL and body stay in
+`lib/aei/apiConfig.ts` marked TODO until they are copied from the official docs.
+A present key selects the live adapter; until that file is confirmed, the call
+stops and the rule fallback answers. Mock mode is what you get when the key is
+missing or invalid.
+
+## Going live
+
+1. Copy `.env.example` to `.env.local` and paste `MODEL_API_KEY`. Set the same
+   names in the Vercel project environment. Do not prefix them with `NEXT_PUBLIC_`.
+   Leave the optional base URL, model id overrides, storage token, and deploy
+   token blank unless you need them.
+2. Open `/api/aei/status` or the provider lines on `/aei`. Each key reads
+   present, missing, or invalid. The response never includes a value.
+3. Run the three spikes above, then `npm run aei:smoke`.
+4. Done. Cue replies stay log-only until you point the stage at them.
+   `parseMetaCue` still rejects a scene outside the pool or a number outside 0..1.
+
+Theme packs and the session cue log are JSON files under `out/store/`.
+`GET /api/aei/crowd` is the crowd meter. `GET /api/aei/session` is the cue memory.

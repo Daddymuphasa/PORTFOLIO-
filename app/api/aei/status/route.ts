@@ -1,8 +1,8 @@
-import { metaConfigured } from "@/lib/aei/meta";
+import { buildStatus } from "@/lib/aei/statusReport";
 
 export const dynamic = "force-dynamic";
 
-/** Whether the server can see MODEL_API_KEY. The key itself is never returned. */
-export function GET() {
-  return Response.json({ metaConfigured: metaConfigured() });
+/** Provider modes and key states. Values of keys are not included. */
+export async function GET() {
+  return Response.json(await buildStatus());
 }
