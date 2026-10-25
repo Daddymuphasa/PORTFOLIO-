@@ -140,6 +140,7 @@ export default function AeiStage() {
   const loopIntervalRef = useRef(12);
   const demoCrowdRef = useRef(false);
   const crowdScoreRef = useRef(0);
+  const loopClockRef = useRef(0);
   const [hud, setHud] = useState<Hud>({
     energy: 0,
     bass: 0,
@@ -247,6 +248,7 @@ export default function AeiStage() {
     let lastLog = 0;
     let lastSig = "";
     let lastAudio = audio.ctx.currentTime;
+    let lastStamp = performance.now();
     const postSession = (body: Record<string, unknown>) => {
       void fetch("/api/aei/session", {
         method: "POST",
@@ -269,7 +271,7 @@ export default function AeiStage() {
         window.clearTimeout(timer);
         const engine = loopRef.current;
         if (!engine) return;
-        const now = audio.ctx.currentTime;
+        const now = loopClockRef.current;
         const outcome = engine.complete(
           ask.token,
           result.ok
@@ -326,6 +328,9 @@ export default function AeiStage() {
         .catch(() => finish({ ok: false, latencyMs: performance.now() - started }));
     };
     const tick = (nowMs: number) => {
+      const step = Math.min(0.1, Math.max(0, (nowMs - lastStamp) / 1000));
+      lastStamp = nowMs;
+      loopClockRef.current += step;
       const frame = audio.readFrame();
       const analysis: ExperienceSignals = frame ? analyzer.update(frame) : emptySignals();
       const theme = THEMES.find((entry) => entry.id === themeIdRef.current) ?? THEMES[0];
@@ -350,7 +355,7 @@ export default function AeiStage() {
       const style = flyerStyleRef.current ?? theme.style;
       const crowdScore = demoCrowdRef.current ? syntheticCrowdScore(progress) : crowdScoreRef.current;
       const directedFrame = loop.frame(directed, {
-        now: signals.now,
+        now: loopClockRef.current,
         onset: signals.onset,
         energy: signals.energy,
         bpm: signals.bpm,
@@ -694,8 +699,7 @@ export default function AeiStage() {
   }
 
   function approveCue() {
-    const now = snapshotRef.current.signals.now;
-    if (loopEngine().approve(now)) setLoopPending(null);
+    if (loopEngine().approve(loopClockRef.current)) setLoopPending(null);
   }
 
   function skipCue() {
