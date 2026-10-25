@@ -5,6 +5,7 @@
 import {
   AdditiveBlending,
   BufferAttribute,
+  DoubleSide,
   BufferGeometry,
   DataTexture,
   Group,
@@ -369,6 +370,7 @@ export function createBeatScene(canvas: HTMLCanvasElement): BeatScene {
     uniforms,
     vertexShader: MESH_VERT,
     fragmentShader: MESH_FRAG,
+    side: DoubleSide,
   });
   const pointMat = new ShaderMaterial({
     uniforms,
@@ -553,7 +555,8 @@ export function createBeatScene(canvas: HTMLCanvasElement): BeatScene {
       uniforms.uTime.value = frame.time;
       uniforms.uSize.value = frame.lowEnd ? 2.4 : 1.8 + (1 - frame.look.points) * 1.4;
       uniforms.uPointer.value = frame.pointer;
-      group.rotation.y = spin.angle + dragYaw;
+      group.rotation.z = spin.angle;
+      group.rotation.y = dragYaw;
       if (mesh) mesh.visible = frame.look.mode === "mesh" && Boolean(picture);
       if (points) points.visible = frame.look.mode === "points" && Boolean(picture);
       renderer.render(scene, camera);
