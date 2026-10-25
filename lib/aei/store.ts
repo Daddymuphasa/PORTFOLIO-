@@ -5,6 +5,7 @@
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { outDir, sessionId } from "./costLog";
+import { styleFromPalette } from "./flyer";
 import { validateThemeDraft } from "./schema";
 import type { CrowdMeter, StoredCue, ThemeDraft } from "./statusTypes";
 import type { ThemePack } from "./types";
@@ -52,6 +53,7 @@ export function themeDraftToPack(draft: ThemeDraft): ThemePack {
     motifs: draft.motifKeywords,
     mood: draft.mood,
     energyArc: draft.intensityCurve.map((point) => ({ at: point.at, energy: point.intensity })),
+    style: styleFromPalette(draft.palette),
   };
 }
 

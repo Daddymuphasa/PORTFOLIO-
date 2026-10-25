@@ -3,6 +3,7 @@
  * produce a cue. Scene changes are smoothed and held so the picture does not
  * flicker. Intensity and strobe follow the current frame so hits read immediately.
  */
+import { beatLookFromSignals } from "./beatLook";
 import { AEI_SCENE_IDS } from "./scenes";
 import { paletteWindow, sampleEnergyArc } from "./themes";
 import type { Cue, DirectorSignals, ManualOverride, RenderParams, ThemePack } from "./types";
@@ -91,6 +92,7 @@ export class RuleDirector {
       asset,
       source: "rules",
       reason: `live ${clamp01(signals.energy).toFixed(2)} + arc ${arc.toFixed(2)} → ${scene}`,
+      beat: beatLookFromSignals(signals),
     };
   }
 }

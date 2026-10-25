@@ -53,6 +53,24 @@ export function drawCrowdOverlay(basePng: Buffer): Buffer {
   return encodePng(image.width, image.height, image.rgba);
 }
 
+/** Square geometric card for the Beat Image sample. No photograph. */
+export function drawBeatSample(): Buffer {
+  const size = 512;
+  const rgba = new Uint8Array(size * size * 4);
+  fill(rgba, [8, 12, 18, 255]);
+  fillEllipse(rgba, size, size, 256, 230, 150, 150, [242, 166, 90, 255]);
+  fillEllipse(rgba, size, size, 320, 280, 78, 78, [232, 93, 117, 255]);
+  fillEllipse(rgba, size, size, 180, 300, 46, 90, [126, 200, 195, 255]);
+  for (let i = 0; i < 7; i++) {
+    const y = 70 + i * 52;
+    for (let x = 40; x < 120; x++) {
+      const p = (y * size + x) * 4;
+      rgba.set([244, 236, 220, 255], p);
+    }
+  }
+  return encodePng(size, size, rgba);
+}
+
 export function drawFlyer(): Buffer {
   const width = 480;
   const height = 640;

@@ -25,9 +25,11 @@ flowchart LR
   Params --> Stage[Vision visualizers + palette wash]
 ```
 
-* **Theme pack** (`lib/aei/themes.ts`): palette, motifs, mood, and an energy arc
-  from 0 to 1 across the event. Two packs are written by hand (`Afterglow Terrace`,
-  `Harbor Glass`). Reading a flyer or a banner into a pack is later work.
+* **Theme pack** (`lib/aei/themes.ts`): palette, motifs, mood, an energy arc
+  from 0 to 1 across the event, and a distortion style (palette, wave, spin,
+  blend). Two packs are written by hand (`Afterglow Terrace`, `Harbor Glass`).
+  Loading a flyer on `/aei` measures the picture locally and asks the theme
+  provider for a palette. That style is what Beat Image uses.
 * **Signals**: `AudioEngine` and `AudioAnalyzer` from `lib/papagedon/` (the same
   analysis Vision uses). Each frame exposes energy, bass / mid / treble, a BPM
   estimate, and an onset.
@@ -46,6 +48,15 @@ flowchart LR
   Intensity scales the audio those visualizers already take. Strobe lengthens
   the beat pulse and paints a short flash. The palette is a wash over the
   imported materials; those materials stay owned by the Vision packs.
+* **Beat Image** (`beat-image` on `/aei`): an uploaded picture, or the geometric
+  sample at `public/aei/beat-sample.png`. **Load flyer** (or the geometric
+  poster at `public/aei/sample-flyer.png`) studies the poster and bends every
+  picture with that wave, including the flyer. **Lock style** keeps the wave
+  while the music still moves it. A calm poster stays slow and wide. A loud one
+  gets tighter and faster. The cue carries the same knobs as `beat`, including
+  the style, so the rule director and a future model cue can change them. A
+  depth model may download in the browser the first time a picture is added.
+  If it does not, brightness is used instead.
 * **Meta provider** (`lib/aei/meta.ts`, called from `POST /api/aei/cue`): reads
   `MODEL_API_KEY` on the server. The key is not a `NEXT_PUBLIC_` variable and is
   not sent to the browser. `GET /api/aei/status` reports only whether the key is

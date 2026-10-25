@@ -5,7 +5,7 @@
  */
 import { ALL_SCENES, AUTO_POOL } from "@/lib/vision/scenes";
 
-export type AeiSceneKind = "original" | "immersive";
+export type AeiSceneKind = "original" | "immersive" | "beat";
 
 export type AeiScene = {
   id: string;
@@ -13,12 +13,17 @@ export type AeiScene = {
   kind: AeiSceneKind;
 };
 
-export const AEI_SCENES: AeiScene[] = AUTO_POOL.map((id) => {
-  const scene = ALL_SCENES.find((entry) => entry.id === id);
-  if (!scene) throw new Error(`AEI scene missing from the Vision catalog: ${id}`);
-  const kind: AeiSceneKind = scene.kind === "immersive" ? "immersive" : "original";
-  return { id: scene.id, name: scene.name, kind };
-});
+export const BEAT_IMAGE_SCENE: AeiScene = { id: "beat-image", name: "Beat Image", kind: "beat" };
+
+export const AEI_SCENES: AeiScene[] = [
+  ...AUTO_POOL.map((id) => {
+    const scene = ALL_SCENES.find((entry) => entry.id === id);
+    if (!scene) throw new Error(`AEI scene missing from the Vision catalog: ${id}`);
+    const kind: AeiSceneKind = scene.kind === "immersive" ? "immersive" : "original";
+    return { id: scene.id, name: scene.name, kind };
+  }),
+  BEAT_IMAGE_SCENE,
+];
 
 export const AEI_SCENE_IDS: readonly string[] = AEI_SCENES.map((scene) => scene.id);
 

@@ -1,8 +1,9 @@
 /**
  * Hand-written theme packs. A pack is the pre-event brief: palette, motifs,
- * mood, and the energy shape of the night. Flyer and banner reading comes later;
- * these two packs are enough to run the director with no model.
+ * mood, the energy shape of the night, and a distortion style for Beat Image.
+ * A loaded flyer can replace that style. These two packs run with no model.
  */
+import { styleFromRead } from "./flyer";
 import type { EnergyPoint, ThemePack } from "./types";
 
 export const SAMPLE_THEME: ThemePack = {
@@ -18,6 +19,17 @@ export const SAMPLE_THEME: ThemePack = {
     { at: 0.8, energy: 0.9 },
     { at: 1, energy: 0.4 },
   ],
+  style: styleFromRead(
+    {
+      palette: ["#1B1430", "#F2A65A", "#E85D75", "#7EC8C3"],
+      contrast: 0.34,
+      brightness: 0.46,
+      edgeDensity: 0.3,
+      busyness: 0.42,
+      warmth: 0.72,
+    },
+    ["#1B1430", "#F2A65A", "#E85D75", "#7EC8C3"],
+  ),
 };
 
 export const HARBOR_THEME: ThemePack = {
@@ -33,6 +45,17 @@ export const HARBOR_THEME: ThemePack = {
     { at: 0.9, energy: 0.78 },
     { at: 1, energy: 0.33 },
   ],
+  style: styleFromRead(
+    {
+      palette: ["#06141B", "#1B6CA8", "#C6E4F2", "#E7D7A1"],
+      contrast: 0.16,
+      brightness: 0.28,
+      edgeDensity: 0.12,
+      busyness: 0.18,
+      warmth: 0.18,
+    },
+    ["#06141B", "#1B6CA8", "#C6E4F2", "#E7D7A1"],
+  ),
 };
 
 export const THEMES: ThemePack[] = [SAMPLE_THEME, HARBOR_THEME];

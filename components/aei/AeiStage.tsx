@@ -9,11 +9,18 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AudioAnalyzer, emptySignals, type ExperienceSignals } from "@/lib/papagedon/analyzer";
 import { AudioEngine } from "@/lib/papagedon/audioSources";
+import { DEFAULT_BEAT_LOOK } from "@/lib/aei/beatLook";
+import { analyzeFlyer, composeBeatLook, spinModeFromStyle, styleFromRead, type FlyerRead } from "@/lib/aei/flyer";
 import { aeiSceneById, AEI_SCENES } from "@/lib/aei/scenes";
 import { applyOverride, cueToRenderParams, RuleDirector } from "@/lib/aei/director";
 import { sampleEnergyArc, THEMES } from "@/lib/aei/themes";
 import type { AeiStatusBody, CrowdMeter } from "@/lib/aei/statusTypes";
-import type { Cue, DirectorSignals, ManualOverride } from "@/lib/aei/types";
+import type { BeatLook, Cue, DirectorSignals, DistortionStyle, ManualOverride } from "@/lib/aei/types";
+import { BeatPanel, type FlyerReadout } from "./BeatPanel";
+import { depthToPicture, cachedModelDepth } from "./depthClient";
+import { deviceIsLowEnd, pictureFromFile, withModelDepth } from "./gallery";
+import { rasterizeImage } from "./raster";
+import type { BeatPicture } from "./beatScene";
 import { createAeiRenderer } from "./renderer";
 
 type Hud = {
@@ -71,6 +78,7 @@ async function measureDuration(file: File): Promise<number> {
 export default function AeiStage() {
   const originalRef = useRef<HTMLCanvasElement>(null);
   const immersiveRef = useRef<HTMLCanvasElement>(null);
+  const beatRef = useRef<HTMLCanvasElement>(null);
   const washRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<AudioEngine | null>(null);
@@ -98,6 +106,22 @@ export default function AeiStage() {
   const [log, setLog] = useState<Cue[]>([]);
   const [status, setStatus] = useState<AeiStatusBody | null>(null);
   const [crowd, setCrowd] = useState<CrowdMeter | null>(null);
+  const [beatLook, setBeatLook] = useState<BeatLook>(DEFAULT_BEAT_LOOK);
+  const [beatFollow, setBeatFollow] = useState(false);
+  const [pictureNames, setPictureNames] = useState<string[]>([]);
+  const [depthLabel, setDepthLabel] = useState("none");
+  const [lowEnd, setLowEnd] = useState(false);
+  const [flyerHud, setFlyerHud] = useState<FlyerReadout | null>(null);
+  const [flyerLocked, setFlyerLocked] = useState(false);
+  const picturesRef = useRef<BeatPicture[]>([]);
+  const beatLookRef = useRef(beatLook);
+  const beatFollowRef = useRef(beatFollow);
+  const flyerStyleRef = useRef<DistortionStyle | null>(null);
+  const flyerLockRef = useRef(false);
+  const beatTapRef = useRef(false);
+  const pointerRef = useRef({ x: 0.5, y: 0.5 });
+  const lowEndRef = useRef(false);
+  const pictureSeq = useRef(0);
   const [metaMessage, setMetaMessage] = useState<string | null>(null);
   const [metaBusy, setMetaBusy] = useState(false);
   const [hud, setHud] = useState<Hud>({
@@ -121,6 +145,9 @@ export default function AeiStage() {
 
   themeIdRef.current = themeId;
   overrideRef.current = override;
+  beatLookRef.current = beatLook;
+  beatFollowRef.current = beatFollow;
+  flyerLockRef.current = flyerLocked;
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +178,11 @@ export default function AeiStage() {
   useEffect(() => {
     const original = originalRef.current;
     const immersive = immersiveRef.current;
-    if (!original || !immersive) return;
+    const beat = beatRef.current;
+    if (!original || !immersive || !beat) return;
+    const lowEndDevice = deviceIsLowEnd();
+    lowEndRef.current = lowEndDevice;
+    setLowEnd(lowEndDevice);
     const audio = new AudioEngine();
     const analyzer = new AudioAnalyzer();
     const director = new RuleDirector();
@@ -159,7 +190,7 @@ export default function AeiStage() {
     let renderer: ReturnType<typeof createAeiRenderer> | null = null;
     let glFailed = false;
     try {
-      renderer = createAeiRenderer(original, immersive);
+      renderer = createAeiRenderer(original, immersive, beat);
     } catch (error) {
       setGlError(error instanceof Error ? error.message : "WebGL failed to start");
       glFailed = true;
@@ -168,6 +199,7 @@ export default function AeiStage() {
     let lastHud = 0;
     let lastLog = 0;
     let lastSig = "";
+    let lastAudio = audio.ctx.currentTime;
     const loop = (nowMs: number) => {
       const frame = audio.readFrame();
       const analysis: ExperienceSignals = frame ? analyzer.update(frame) : emptySignals();
@@ -197,7 +229,8 @@ export default function AeiStage() {
       if (wash) {
         const [a, b, c] = params.palette;
         wash.style.background = `linear-gradient(125deg, ${a} 0%, ${b} 52%, ${c} 100%)`;
-        wash.style.opacity = String(0.16 + params.intensity * 0.32);
+        const veil = cue.scene === "beat-image" ? 0.22 : 1;
+        wash.style.opacity = String((0.16 + params.intensity * 0.32) * veil);
       }
       const flash = flashRef.current;
       if (flash) {
@@ -206,6 +239,30 @@ export default function AeiStage() {
       }
       if (renderer && !glFailed) {
         try {
+          const audioNow = audio.ctx.currentTime;
+          const dt = Math.min(0.05, Math.max(0, audioNow - lastAudio));
+          lastAudio = audioNow;
+          const look = composeBeatLook(
+            beatFollowRef.current ? cue.beat : beatLookRef.current,
+            flyerStyleRef.current,
+            flyerLockRef.current,
+            beatFollowRef.current,
+            signals,
+          );
+          renderer.setBeat(picturesRef.current, {
+            dt,
+            time: audioNow,
+            bpm: analysis.bpm,
+            bass: analysis.bass,
+            mid: analysis.mid,
+            treble: analysis.treble,
+            onset: analysis.beat,
+            tap: beatTapRef.current,
+            look,
+            lowEnd: lowEndRef.current,
+            pointer: pointerRef.current,
+          });
+          beatTapRef.current = false;
           renderer.render(params, analysis, analysis.beat);
         } catch (error) {
           glFailed = true;
@@ -234,6 +291,9 @@ export default function AeiStage() {
       if (nowMs - lastHud > 120) {
         lastHud = nowMs;
         const scene = aeiSceneById(cue.scene);
+        if (beatFollowRef.current) {
+          setBeatLook(composeBeatLook(cue.beat, flyerStyleRef.current, flyerLockRef.current, true, signals));
+        }
         setHud({
           energy: analysis.energy,
           bass: analysis.bass,
@@ -319,6 +379,122 @@ export default function AeiStage() {
     setPlaying(audio.playing);
   }
 
+  function rememberPictures(next: BeatPicture[]) {
+    picturesRef.current = next.slice(-6);
+    setPictureNames(picturesRef.current.map((picture) => picture.name));
+    const model = picturesRef.current.some((picture) => picture.kind === "model");
+    setDepthLabel(model ? "model" : picturesRef.current.length ? "brightness" : "none");
+  }
+
+  async function addPictures(files: File[]) {
+    const lowEnd = deviceIsLowEnd();
+    lowEndRef.current = lowEnd;
+    const added: BeatPicture[] = [];
+    for (const file of files.slice(0, 6)) {
+      pictureSeq.current += 1;
+      try {
+        added.push(await pictureFromFile(file, file.name || "picture", `pic-${pictureSeq.current}`, lowEnd));
+      } catch {
+        setSourceError("Could not read that picture");
+      }
+    }
+    if (!added.length) return;
+    rememberPictures([...picturesRef.current, ...added]);
+    setDepthLabel("loading");
+    for (const picture of added) {
+      void cachedModelDepth(picture.id, picture.rgba, picture.size, picture.size)
+        .then((model) => {
+          const fitted = depthToPicture(model, picture.size, picture.size);
+          rememberPictures(picturesRef.current.map((row) => (row.id === picture.id ? withModelDepth(row, fitted) : row)));
+        })
+        .catch(() => {
+          if (!picturesRef.current.some((row) => row.kind === "model")) {
+            setDepthLabel(picturesRef.current.length ? "brightness" : "none");
+          }
+        });
+    }
+  }
+
+  function applyFlyerStyle(style: DistortionStyle, read: FlyerRead, name = "") {
+    flyerStyleRef.current = style;
+    setFlyerHud({ warmth: read.warmth, busyness: read.busyness, name });
+    setBeatFollow(false);
+    setBeatLook((current) => ({
+      ...current,
+      style,
+      spinMode: spinModeFromStyle(style.spinStyle),
+      distortion: Math.min(1, Math.max(current.distortion * 0.35, style.amplitude)),
+      glitch: style.wave === "glitch" ? Math.max(current.glitch, 0.62) : Math.min(current.glitch, style.amplitude),
+    }));
+  }
+
+  function setStyleLock(locked: boolean) {
+    if (locked && flyerStyleRef.current) flyerStyleRef.current = beatLookRef.current.style;
+    flyerLockRef.current = locked;
+    setFlyerLocked(locked);
+  }
+
+  async function studyFlyer(file: File) {
+    openBeat(false);
+    let read: FlyerRead;
+    try {
+      const rgba = await rasterizeImage(file, 160);
+      read = analyzeFlyer(rgba, 160, 160);
+    } catch {
+      setSourceError("Could not read that flyer");
+      return;
+    }
+    if (!flyerLockRef.current || !flyerStyleRef.current) applyFlyerStyle(styleFromRead(read), read);
+    await addPictures([file]);
+    try {
+      const response = await fetch("/api/aei/flyer", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ brief: file.name.replace(/\.[^.]+$/, "") || "event flyer", read }),
+      });
+      if (!response.ok || flyerLockRef.current) return;
+      const data = (await response.json()) as { style?: DistortionStyle; name?: string; read?: FlyerRead };
+      if (!data.style) return;
+      applyFlyerStyle(data.style, data.read ?? read, data.name ?? "");
+    } catch {
+      // The local reading already set the wave.
+    }
+  }
+
+  async function loadSampleFlyer() {
+    try {
+      const response = await fetch("/aei/sample-flyer.png");
+      if (!response.ok) throw new Error("Sample flyer is missing");
+      const blob = await response.blob();
+      await studyFlyer(new File([blob], "sample-flyer.png", { type: "image/png" }));
+    } catch {
+      setSourceError("Could not load the sample flyer");
+    }
+  }
+
+  async function loadSamplePicture() {
+    try {
+      const response = await fetch("/aei/beat-sample.png");
+      if (!response.ok) throw new Error("Sample picture is missing");
+      const blob = await response.blob();
+      await addPictures([new File([blob], "sample.png", { type: "image/png" })]);
+    } catch {
+      setSourceError("Could not load the sample picture");
+    }
+  }
+
+  function openBeat(sample = true) {
+    const cue = latestCueRef.current;
+    setOverride({
+      enabled: true,
+      scene: "beat-image",
+      intensity: cue?.intensity ?? override.intensity,
+      strobe: cue?.strobe ?? 0,
+      paletteShift: cue?.paletteShift ?? 0,
+    });
+    if (sample && picturesRef.current.length === 0) void loadSamplePicture();
+  }
+
   function setManual(next: Partial<ManualOverride>) {
     setOverride((current) => ({ ...current, ...next }));
   }
@@ -364,9 +540,29 @@ export default function AeiStage() {
   const shownShift = override.enabled ? override.paletteShift : hud.paletteShift;
 
   return (
-    <main className="fixed inset-0 bg-black text-foreground">
+    <main
+      className="fixed inset-0 bg-black text-foreground"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith("image/"));
+        if (!files.length) return;
+        openBeat(false);
+        void addPictures(files);
+      }}
+      onPointerMove={(event) => {
+        const canvas = beatRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        pointerRef.current = {
+          x: Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width))),
+          y: Math.min(1, Math.max(0, (event.clientY - rect.top) / Math.max(1, rect.height))),
+        };
+      }}
+    >
       <canvas ref={originalRef} className="absolute inset-0 h-full w-full" aria-hidden />
       <canvas ref={immersiveRef} className="absolute inset-0 h-full w-full" style={{ visibility: "hidden" }} aria-hidden />
+      <canvas ref={beatRef} className="absolute inset-0 h-full w-full" style={{ visibility: "hidden" }} aria-hidden />
       <div ref={washRef} className="pointer-events-none absolute inset-0 mix-blend-soft-light" aria-hidden />
       <div ref={flashRef} className="pointer-events-none absolute inset-0 mix-blend-screen" aria-hidden />
 
@@ -432,7 +628,35 @@ export default function AeiStage() {
             </select>
           </label>
           <p className="mt-1 text-xs leading-relaxed text-muted">{theme.mood}</p>
+          <button type="button" className="pg-btn mt-2" onClick={() => openBeat()}>
+            Beat Image
+          </button>
         </section>
+        {shownScene === "beat-image" ? (
+          <BeatPanel
+            look={beatFollow ? (latestCueRef.current?.beat ?? beatLook) : beatLook}
+            follow={beatFollow}
+            depth={depthLabel}
+            names={pictureNames}
+            lowEnd={lowEnd}
+            onLook={setBeatLook}
+            onFollow={setBeatFollow}
+            onFiles={(files) => void addPictures(files)}
+            onSample={() => void loadSamplePicture()}
+            onClear={() => rememberPictures([])}
+            onTap={() => {
+              beatTapRef.current = true;
+            }}
+            flyer={flyerHud}
+            locked={flyerLocked}
+            onFlyer={(files) => {
+              const file = files[0];
+              if (file) void studyFlyer(file);
+            }}
+            onSampleFlyer={() => void loadSampleFlyer()}
+            onLock={setStyleLock}
+          />
+        ) : null}
 
         <section className="mt-4 space-y-2" aria-label="Live readout">
           <div className="flex items-center justify-between gap-3">

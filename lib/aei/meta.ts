@@ -9,6 +9,7 @@
  *   - SAM 3.1: segmentation, once a frame source exists
  *   - Muse Image: motif textures addressed by `asset`
  */
+import { DEFAULT_BEAT_LOOK, readBeatLook } from "./beatLook";
 import { usableModelKey, type AeiEnv } from "./config";
 import { AEI_SCENE_IDS } from "./scenes";
 import type { Cue, DirectorSignals, ThemePack } from "./types";
@@ -93,6 +94,12 @@ export function parseMetaCue(raw: unknown, now: number): Cue {
     throw new MetaDirectorError("Meta cue asset must be a string or null");
   }
   const reason = typeof draft.reason === "string" ? draft.reason.trim().slice(0, 180) : "";
+  let beat = DEFAULT_BEAT_LOOK;
+  if (draft.beat != null) {
+    const parsed = readBeatLook(draft.beat);
+    if (!parsed) throw new MetaDirectorError("Meta cue beat look is invalid");
+    beat = parsed;
+  }
   return {
     id: `m${now.toFixed(3)}`,
     at: now,
@@ -103,6 +110,7 @@ export function parseMetaCue(raw: unknown, now: number): Cue {
     asset: typeof draft.asset === "string" && draft.asset ? draft.asset : null,
     source: "meta",
     reason: reason || "meta cue",
+    beat,
   };
 }
 

@@ -43,6 +43,16 @@ const nextConfig = {
       },
     ];
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "onnxruntime-node$": false,
+        sharp$: false,
+      };
+    }
+    return config;
+  },
   async headers() {
     return [
       {
@@ -65,11 +75,20 @@ const nextConfig = {
               "object-src 'none'",
               join("img-src 'self' data: blob:", monad.img),
               "media-src 'self' blob:",
-              join("connect-src 'self' blob:", visionService, monad.connect),
+              join(
+                "connect-src 'self' blob:",
+                visionService,
+                monad.connect,
+                "https://huggingface.co",
+                "https://cdn-lfs.huggingface.co",
+                "https://cdn-lfs-us-1.huggingface.co",
+                "https://cas-bridge.xethub.hf.co",
+              ),
               join("font-src 'self'", monad.font),
               join("frame-src 'self'", monad.frame),
               join("style-src 'self' 'unsafe-inline'", monad.style),
-              "script-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+              "worker-src 'self' blob:",
             ].join("; "),
           },
         ],

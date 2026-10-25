@@ -11,25 +11,31 @@ import { createNanoHexVisualizer } from "@/lib/vision/visualizers/nano-hex.js";
 import type { ExperienceSignals } from "@/lib/papagedon/analyzer";
 import { aeiSceneById } from "@/lib/aei/scenes";
 import type { RenderParams } from "@/lib/aei/types";
+import { createBeatScene, type BeatFrame, type BeatPicture, type BeatScene } from "./beatScene";
 
 type NanoViz = ReturnType<typeof createNanoHexVisualizer>;
 type ImmersiveViz = ReturnType<typeof createImmersiveVisualizer>;
 
 export type AeiRenderer = {
   render: (params: RenderParams, signals: ExperienceSignals, onset: boolean) => void;
+  setBeat: (pictures: readonly BeatPicture[], frame: BeatFrame) => void;
   dispose: () => void;
 };
 
-export function createAeiRenderer(original: HTMLCanvasElement, immersive: HTMLCanvasElement): AeiRenderer {
+export function createAeiRenderer(original: HTMLCanvasElement, immersive: HTMLCanvasElement, beatCanvas: HTMLCanvasElement): AeiRenderer {
   let nano: NanoViz | null = null;
   let imm: ImmersiveViz | null = null;
+  let beatScene: BeatScene | null = null;
+  let beatPictures: readonly BeatPicture[] = [];
+  let beatFrame: BeatFrame | null = null;
   let currentId = "";
   let beatHold = 0;
   let lastStrobe = 0;
 
-  const show = (kind: "original" | "immersive") => {
+  const show = (kind: "original" | "immersive" | "beat") => {
     original.style.visibility = kind === "original" ? "visible" : "hidden";
     immersive.style.visibility = kind === "immersive" ? "visible" : "hidden";
+    beatCanvas.style.visibility = kind === "beat" ? "visible" : "hidden";
   };
 
   const render = (params: RenderParams, signals: ExperienceSignals, onset: boolean) => {
@@ -50,7 +56,12 @@ export function createAeiRenderer(original: HTMLCanvasElement, immersive: HTMLCa
       beat: beat > 0.2,
     };
 
-    if (scene.kind === "immersive") {
+    if (scene.kind === "beat") {
+      beatScene ??= createBeatScene(beatCanvas);
+      beatScene.setPictures(beatPictures);
+      show("beat");
+      if (beatFrame) beatScene.frame(beatFrame);
+    } else if (scene.kind === "immersive") {
       imm ??= createImmersiveVisualizer(immersive);
       if (currentId !== scene.id) imm.setScene(scene.id as ImmersiveId);
       show("immersive");
@@ -86,11 +97,17 @@ export function createAeiRenderer(original: HTMLCanvasElement, immersive: HTMLCa
 
   return {
     render,
+    setBeat(pictures, frame) {
+      beatPictures = pictures;
+      beatFrame = frame;
+    },
     dispose() {
       nano?.dispose();
       imm?.dispose();
+      beatScene?.dispose();
       nano = null;
       imm = null;
+      beatScene = null;
     },
   };
 }

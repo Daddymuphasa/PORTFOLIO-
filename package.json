@@ -16,6 +16,7 @@
     "sync:core": "node scripts/sync-papagedon-core.mjs ../PAPAGEDON-CORE-"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.1",
     "framer-motion": "^11.11.9",
     "next": "^15.5.27",
     "react": "^19.3.0",
