@@ -21,6 +21,7 @@ import { ASSET_BASE, catalog, type PackDef, type ThemeDef } from "@/lib/papagedo
 import { Web3Provider } from "./Web3Provider";
 import WalletButton from "./WalletButton";
 import PaidCallPanel, { type IdentityStatus } from "./PaidCallPanel";
+import DepthStudio from "./DepthStudio";
 
 const DEMO_CYCLE_SECONDS = 20; // PAPAGEDON_DEMO_CYCLE in Runtime.cpp
 const LIVE_CLIP_SECONDS = 8;
@@ -64,6 +65,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
   const [shaderError, setShaderError] = useState<string | null>(null);
   const [autoCycle, setAutoCycle] = useState(false);
   const [hideUi, setHideUi] = useState(false);
+  const [depthStudioOpen, setDepthStudioOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const [source, setSource] = useState<AudioSourceKind | null>(null);
@@ -276,6 +278,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
           </Link>
           <div className="flex items-center gap-2">
             <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted md:inline">Celo mainnet</span>
+            <button className="pg-btn pg-btn-primary" onClick={() => setDepthStudioOpen(true)}>Depth studio <span aria-hidden>✳</span></button>
             <WalletButton />
           </div>
         </nav>
@@ -346,6 +349,16 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
               {shaderError && <p className="mt-1 text-[11px] text-red-300">{shaderError}</p>}
             </section>
 
+            <section className="pg-panel pg-depth-launch">
+              <div className="pg-depth-launch-art" aria-hidden="true"><span /><i /><b>DEPTH<br />SIGNAL</b></div>
+              <div className="pg-depth-launch-copy">
+                <div className="pg-label">New · visual intelligence</div>
+                <h2>Depth Lab</h2>
+                <p>Give any still image a living, audio-reactive frame.</p>
+                <button className="pg-btn pg-btn-primary" onClick={() => setDepthStudioOpen(true)}>TRY THE DEMO <span aria-hidden>↗</span></button>
+              </div>
+            </section>
+
             <section className="pg-panel">
               <div className="mb-2 flex items-center justify-between">
                 <span className="pg-label">Live signals</span>
@@ -371,6 +384,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
           </div>
         </div>
       </div>
+      {depthStudioOpen && <DepthStudio onClose={() => setDepthStudioOpen(false)} audio={{ bass: s.bass, energy: s.energy }} />}
       <style>{`@keyframes pgxBeat { from { opacity: 1; transform: scale(1.6); } to { opacity: .25; transform: scale(1); } }`}</style>
     </div>
   );
