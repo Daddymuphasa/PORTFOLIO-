@@ -121,7 +121,7 @@ export function readStoredCue(raw: unknown): StoredCue | null {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   const source = row.source;
-  if (source !== "rules" && source !== "meta" && source !== "operator") return null;
+  if (source !== "rules" && source !== "meta" && source !== "operator" && source !== "live" && source !== "mock") return null;
   if (typeof row.scene !== "string" || !row.scene.trim()) return null;
   if (typeof row.reason !== "string") return null;
   for (const key of ["at", "intensity", "strobe"] as const) {
@@ -129,6 +129,13 @@ export function readStoredCue(raw: unknown): StoredCue | null {
   }
   const asset = row.asset == null ? null : typeof row.asset === "string" ? row.asset.slice(0, 80) : null;
   if (row.asset != null && typeof row.asset !== "string") return null;
+  const optional = (key: string) => {
+    const value = row[key];
+    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  };
+  const latencyMs = optional("latencyMs");
+  const crowdBefore = optional("crowdBefore");
+  const crowdAfter = optional("crowdAfter");
   return {
     at: row.at as number,
     scene: row.scene.trim().slice(0, 80),
@@ -137,5 +144,23 @@ export function readStoredCue(raw: unknown): StoredCue | null {
     strobe: Math.min(1, Math.max(0, row.strobe as number)),
     asset,
     reason: row.reason.trim().slice(0, 180),
+    ...(latencyMs == null ? {} : { latencyMs: Math.max(0, latencyMs) }),
+    ...(crowdBefore == null ? {} : { crowdBefore }),
+    ...(crowdAfter == null ? {} : { crowdAfter }),
   };
+}
+
+/** Fill the crowd score that followed a cue. Day 7 can read it from the same row. */
+export async function noteCrowdResponse(match: { at: number; scene: string; crowdAfter: number }): Promise<SessionRecord> {
+  const session = await loadSession();
+  for (let i = session.cues.length - 1; i >= 0; i--) {
+    const cue = session.cues[i];
+    if (cue.scene === match.scene && Math.abs(cue.at - match.at) < 0.05) {
+      cue.crowdAfter = match.crowdAfter;
+      break;
+    }
+  }
+  session.updatedAt = new Date().toISOString();
+  await saveSession(session);
+  return session;
 }

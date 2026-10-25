@@ -47,6 +47,7 @@ export async function attemptLiveCall(
   capability: LiveCapability,
   apiKey: string,
   env?: AeiEnv,
+  payload?: unknown,
 ): Promise<unknown> {
   const url = liveRequestUrl(capability, env);
   if (!url) throw new EndpointNotConfirmedError(capability);
@@ -57,7 +58,7 @@ export async function attemptLiveCall(
       authorization: `Bearer ${apiKey}`,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ model: API_CONFIG.models[capability] }),
+    body: JSON.stringify({ model: API_CONFIG.models[capability], input: payload ?? null }),
   });
   if (!response.ok) throw new Error(`live ${capability} responded ${response.status}`);
   return response.json() as Promise<unknown>;

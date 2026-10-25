@@ -53,9 +53,12 @@ export type ThemeDraft = {
 export type StoredCue = {
   at: number;
   scene: string;
-  source: "rules" | "meta" | "operator";
+  source: "rules" | "meta" | "operator" | "live" | "mock";
   intensity: number;
   strobe: number;
   asset: string | null;
   reason: string;
+  latencyMs?: number;
+  crowdBefore?: number;
+  crowdAfter?: number | null;
 };

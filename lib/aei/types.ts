@@ -46,7 +46,7 @@ export type ThemePack = {
   style: DistortionStyle;
 };
 
-export type CueSource = "rules" | "meta" | "operator";
+export type CueSource = "rules" | "meta" | "operator" | "live" | "mock";
 
 export type SpinMode = "continuous" | "kick" | "bar";
 export type BeatRenderMode = "mesh" | "points";

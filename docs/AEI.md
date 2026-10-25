@@ -34,14 +34,25 @@ flowchart LR
   analysis Vision uses). Each frame exposes energy, bass / mid / treble, a BPM
   estimate, and an onset.
 * **Cue** (`lib/aei/types.ts`): `scene`, `paletteShift`, `intensity`, `strobe`,
-  `asset`, plus who decided it (`rules`, `meta`, or `operator`) and a short reason.
+  `asset`, plus who decided it (`rules`, `meta`, `operator`, `live`, or `mock`)
+  and a short reason. Beat Image cues also carry the wave, spin, and render mode.
 * **Rule director** (`lib/aei/director.ts`): works with no API key. Blended energy
   is `0.65 · live + 0.35 · theme arc`. Scene choice is smoothed and held (6 s)
   so the look does not flicker. Intensity and strobe follow the current frame.
   An onset strobes only when that blend is hot. `asset` is the theme motif for
   the current scene.
 * **Operator**: the panel can lock scene, intensity, strobe, and palette shift.
-  A lock is a cue with source `operator`.
+  A lock is a cue with source `operator`. **Hold look** keeps the current picture.
+  **Approve** waits for a click; **Auto** applies the next cue.
+* **Director loop** (on `/aei`, `POST /api/aei/director`): every 10–15 seconds, and
+  when the music or the room shifts, the stage asks for one cue. The reply names
+  a scene, a palette shift, intensity, a Beat Image look, and a short reason.
+  A slow, empty, or invalid reply leaves the rule director in charge and does
+  not stall the picture. A new scene is held for a few seconds and lands on a
+  beat. **Loop demo** plays the sample clip with a stand-in room level, so the
+  log fills with no key. The cue log shows the reason, where the cue came from,
+  and how long the reply took. The session file keeps each cue and the room
+  level that followed it.
 * **Render params**: palette (three colours from the theme), intensity, scene id,
   strobe. Scene id selects a Vision visualizer — the original packs through
   `createNanoHexVisualizer`, the immersive scenes through `createImmersiveVisualizer`.
@@ -61,8 +72,10 @@ flowchart LR
   `MODEL_API_KEY` on the server. The key is not a `NEXT_PUBLIC_` variable and is
   not sent to the browser. `GET /api/aei/status` reports only whether the key is
   present. The request transport is unwired, so a key alone still returns
-  "not wired" and the picture keeps using the rules. A Meta reply on `/aei` is
-  written to the cue log; it does not replace the rule director.
+  "not wired" and the picture keeps using the rules. A one-shot Meta reply on
+  `/aei` is written to the cue log and does not replace the rule director. The
+  director loop is the path that can change the picture, and only when the
+  reply arrives in time and checks out.
 
 ## Run locally
 
@@ -75,6 +88,10 @@ Open http://localhost:3000/aei and choose **Play sample**. The sample is an
 8.5 s, 120 BPM kick (`public/aei/sample-kick.wav`). **Load audio** takes a local
 file. **Mic** listens to an input. The energy meter, BPM, onset dot, and cue
 log should move with the music, and the picture should pulse on the kicks.
+
+**Loop demo** runs the director loop on that same clip. The cue log lists each
+cue with a reason, a source, and a latency. **Hold look** freezes the picture.
+No key is required.
 
 ```bash
 npm test
@@ -110,8 +127,10 @@ missing or invalid.
 2. Open `/api/aei/status` or the provider lines on `/aei`. Each key reads
    present, missing, or invalid. The response never includes a value.
 3. Run the three spikes above, then `npm run aei:smoke`.
-4. Done. Cue replies stay log-only until you point the stage at them.
-   `parseMetaCue` still rejects a scene outside the pool or a number outside 0..1.
+4. The director loop on `/aei` uses a confirmed theme URL when one is set.
+   Until then it stays on the stand-in cue. A late or invalid reply leaves the
+   rules in charge. The one-shot cue route stays log-only. `parseMetaCue` still
+   rejects a scene outside the pool or a number outside 0..1.
 
 Theme packs and the session cue log are JSON files under `out/store/`.
 `GET /api/aei/crowd` is the crowd meter. `GET /api/aei/session` is the cue memory.

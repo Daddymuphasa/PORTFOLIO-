@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * /aei operator surface. The picture is the Vision visualizers. The decisions
- * are the rule director (and, later, the Meta stub behind /api/aei/cue).
- * This file does not import the Meta provider, so MODEL_API_KEY stays on the server.
+ * /aei operator surface. The picture is the Vision visualizers. Rules run
+ * every frame. The director loop can replace a look when a reply arrives in
+ * time. This file does not import the provider, so MODEL_API_KEY stays on the server.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -13,10 +13,12 @@ import { DEFAULT_BEAT_LOOK } from "@/lib/aei/beatLook";
 import { analyzeFlyer, composeBeatLook, spinModeFromStyle, styleFromRead, type FlyerRead } from "@/lib/aei/flyer";
 import { aeiSceneById, AEI_SCENES } from "@/lib/aei/scenes";
 import { applyOverride, cueToRenderParams, RuleDirector } from "@/lib/aei/director";
+import { clampDirectorCue, DirectorLoop, syntheticCrowdScore, type DirectorInput, type LoopLogEntry } from "@/lib/aei/loop";
 import { sampleEnergyArc, THEMES } from "@/lib/aei/themes";
 import type { AeiStatusBody, CrowdMeter } from "@/lib/aei/statusTypes";
 import type { BeatLook, Cue, DirectorSignals, DistortionStyle, ManualOverride } from "@/lib/aei/types";
 import { BeatPanel, type FlyerReadout } from "./BeatPanel";
+import DirectorPanel, { type LoopGate } from "./DirectorPanel";
 import { depthToPicture, cachedModelDepth } from "./depthClient";
 import { deviceIsLowEnd, pictureFromFile, withModelDepth } from "./gallery";
 import { rasterizeImage } from "./raster";
@@ -124,6 +126,20 @@ export default function AeiStage() {
   const pictureSeq = useRef(0);
   const [metaMessage, setMetaMessage] = useState<string | null>(null);
   const [metaBusy, setMetaBusy] = useState(false);
+  const [loopOn, setLoopOn] = useState(false);
+  const [loopGate, setLoopGate] = useState<LoopGate>("auto");
+  const [loopHeld, setLoopHeld] = useState(false);
+  const [loopInterval, setLoopInterval] = useState(12);
+  const [loopPending, setLoopPending] = useState<string | null>(null);
+  const [loopLog, setLoopLog] = useState<LoopLogEntry[]>([]);
+  const [demoCrowd, setDemoCrowd] = useState(false);
+  const loopRef = useRef<DirectorLoop | null>(null);
+  const loopOnRef = useRef(false);
+  const loopGateRef = useRef<LoopGate>("auto");
+  const loopHeldRef = useRef(false);
+  const loopIntervalRef = useRef(12);
+  const demoCrowdRef = useRef(false);
+  const crowdScoreRef = useRef(0);
   const [hud, setHud] = useState<Hud>({
     energy: 0,
     bass: 0,
@@ -148,6 +164,12 @@ export default function AeiStage() {
   beatLookRef.current = beatLook;
   beatFollowRef.current = beatFollow;
   flyerLockRef.current = flyerLocked;
+  loopOnRef.current = loopOn;
+  loopGateRef.current = loopGate;
+  loopHeldRef.current = loopHeld;
+  loopIntervalRef.current = loopInterval;
+  demoCrowdRef.current = demoCrowd;
+  crowdScoreRef.current = crowd ? Math.min(1, Math.max(0, crowd.densityScore / 100)) : 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -176,6 +198,24 @@ export default function AeiStage() {
   }, []);
 
   useEffect(() => {
+    if (!loopOn || demoCrowd) return;
+    let cancelled = false;
+    const pull = () => {
+      fetch("/api/aei/crowd")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: CrowdMeter | null) => {
+          if (!cancelled && data) setCrowd(data);
+        })
+        .catch(() => undefined);
+    };
+    const timer = setInterval(pull, 8000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [loopOn, demoCrowd]);
+
+  useEffect(() => {
     const original = originalRef.current;
     const immersive = immersiveRef.current;
     const beat = beatRef.current;
@@ -186,6 +226,12 @@ export default function AeiStage() {
     const audio = new AudioEngine();
     const analyzer = new AudioAnalyzer();
     const director = new RuleDirector();
+    const loop = new DirectorLoop({ intervalSec: loopIntervalRef.current });
+    loop.setEnabled(loopOnRef.current);
+    loop.setGate(loopGateRef.current);
+    loop.setInterval(loopIntervalRef.current);
+    if (loopHeldRef.current && latestCueRef.current) loop.kill(latestCueRef.current);
+    loopRef.current = loop;
     audioRef.current = audio;
     let renderer: ReturnType<typeof createAeiRenderer> | null = null;
     let glFailed = false;
@@ -196,11 +242,90 @@ export default function AeiStage() {
       glFailed = true;
     }
     let raf = 0;
+    let alive = true;
     let lastHud = 0;
     let lastLog = 0;
     let lastSig = "";
     let lastAudio = audio.ctx.currentTime;
-    const loop = (nowMs: number) => {
+    const postSession = (body: Record<string, unknown>) => {
+      void fetch("/api/aei/session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }).catch(() => undefined);
+    };
+    const requestCue = (ask: { token: number; input: DirectorInput }) => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 1600);
+      const started = performance.now();
+      let settled = false;
+      const finish = (
+        result:
+          | { ok: true; source: "live" | "mock"; latencyMs: number; draft: NonNullable<ReturnType<typeof clampDirectorCue>> }
+          | { ok: false; latencyMs: number },
+      ) => {
+        if (settled || !alive) return;
+        settled = true;
+        window.clearTimeout(timer);
+        const engine = loopRef.current;
+        if (!engine) return;
+        const now = audio.ctx.currentTime;
+        const outcome = engine.complete(
+          ask.token,
+          result.ok
+            ? {
+                ok: true,
+                source: result.source,
+                latencyMs: result.latencyMs,
+                draft: result.draft,
+                now,
+                crowdBefore: ask.input.crowd.score,
+              }
+            : { ok: false, latencyMs: result.latencyMs, now, scene: ask.input.current.scene },
+        );
+        if (outcome === "pending") {
+          setLoopPending(result.ok ? result.draft.reason : null);
+          return;
+        }
+        setLoopPending(null);
+        if (!outcome) return;
+        setLoopLog((prev) => [outcome, ...prev].slice(0, 24));
+        postSession({
+          at: outcome.at,
+          scene: outcome.scene,
+          source: outcome.source,
+          intensity: ask.input.current.intensity,
+          strobe: ask.input.current.strobe,
+          asset: null,
+          reason: outcome.reason,
+          latencyMs: outcome.latencyMs,
+          crowdBefore: outcome.crowdBefore,
+        });
+      };
+      void fetch("/api/aei/director", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(ask.input),
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          const elapsed = performance.now() - started;
+          const data = (await response.json().catch(() => null)) as { ok?: boolean; source?: string; latencyMs?: number; cue?: unknown } | null;
+          const latencyMs = typeof data?.latencyMs === "number" ? data.latencyMs : elapsed;
+          if (!response.ok || !data?.ok || (data.source !== "live" && data.source !== "mock")) {
+            finish({ ok: false, latencyMs });
+            return;
+          }
+          const draft = clampDirectorCue(data.cue, ask.input.theme.palette);
+          if (!draft) {
+            finish({ ok: false, latencyMs });
+            return;
+          }
+          finish({ ok: true, source: data.source, latencyMs, draft });
+        })
+        .catch(() => finish({ ok: false, latencyMs: performance.now() - started }));
+    };
+    const tick = (nowMs: number) => {
       const frame = audio.readFrame();
       const analysis: ExperienceSignals = frame ? analyzer.update(frame) : emptySignals();
       const theme = THEMES.find((entry) => entry.id === themeIdRef.current) ?? THEMES[0];
@@ -222,7 +347,44 @@ export default function AeiStage() {
       };
       snapshotRef.current = { themeId: theme.id, signals };
       const directed = director.update(signals, theme);
-      const cue = applyOverride(directed, overrideRef.current);
+      const style = flyerStyleRef.current ?? theme.style;
+      const crowdScore = demoCrowdRef.current ? syntheticCrowdScore(progress) : crowdScoreRef.current;
+      const directedFrame = loop.frame(directed, {
+        now: signals.now,
+        onset: signals.onset,
+        energy: signals.energy,
+        bpm: signals.bpm,
+        progress,
+        crowd: crowdScore,
+        theme,
+        style,
+      });
+      if (directedFrame.ask) requestCue(directedFrame.ask);
+      if (directedFrame.committed) {
+        const entry = directedFrame.committed;
+        setLoopLog((prev) => [entry, ...prev].slice(0, 24));
+        postSession({
+          at: entry.at,
+          scene: entry.scene,
+          source: entry.source,
+          intensity: directedFrame.cue.intensity,
+          strobe: directedFrame.cue.strobe,
+          asset: directedFrame.cue.asset,
+          reason: entry.reason,
+          latencyMs: entry.latencyMs,
+          crowdBefore: entry.crowdBefore,
+        });
+      }
+      if (directedFrame.response) {
+        const note = directedFrame.response;
+        setLoopLog((prev) =>
+          prev.map((row) =>
+            row.crowdAfter == null && row.scene === note.scene && Math.abs(row.at - note.at) < 0.05 ? { ...row, crowdAfter: note.crowdAfter } : row,
+          ),
+        );
+        postSession({ update: true, at: note.at, scene: note.scene, crowdAfter: note.crowdAfter });
+      }
+      const cue = applyOverride(directedFrame.cue, overrideRef.current);
       latestCueRef.current = cue;
       const params = cueToRenderParams(cue, theme);
       const wash = washRef.current;
@@ -270,23 +432,19 @@ export default function AeiStage() {
         }
       }
       const sig = `${cueSignature(cue)}|e${Math.round(analysis.energy * 5)}`;
-      if (sig !== lastSig && (lastSig === "" || nowMs - lastLog > 600)) {
+      if (cue.source !== "live" && cue.source !== "mock" && sig !== lastSig && (lastSig === "" || nowMs - lastLog > 600)) {
         lastSig = sig;
         lastLog = nowMs;
         setLog((prev) => [cue, ...prev].slice(0, 24));
-        void fetch("/api/aei/session", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            at: cue.at,
-            scene: cue.scene,
-            source: cue.source,
-            intensity: cue.intensity,
-            strobe: cue.strobe,
-            asset: cue.asset,
-            reason: cue.reason,
-          }),
-        }).catch(() => undefined);
+        postSession({
+          at: cue.at,
+          scene: cue.scene,
+          source: cue.source,
+          intensity: cue.intensity,
+          strobe: cue.strobe,
+          asset: cue.asset,
+          reason: cue.reason,
+        });
       }
       if (nowMs - lastHud > 120) {
         lastHud = nowMs;
@@ -313,13 +471,15 @@ export default function AeiStage() {
           source: cue.source,
         });
       }
-      raf = requestAnimationFrame(loop);
+      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(loop);
+    raf = requestAnimationFrame(tick);
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
       renderer?.dispose();
       audioRef.current = null;
+      if (loopRef.current === loop) loopRef.current = null;
       void audio.close();
     };
   }, []);
@@ -497,6 +657,63 @@ export default function AeiStage() {
 
   function setManual(next: Partial<ManualOverride>) {
     setOverride((current) => ({ ...current, ...next }));
+  }
+
+  function loopEngine(): DirectorLoop {
+    if (!loopRef.current) loopRef.current = new DirectorLoop({ intervalSec: loopIntervalRef.current });
+    return loopRef.current;
+  }
+
+  function setLoopEnabled(on: boolean) {
+    const engine = loopEngine();
+    engine.setEnabled(on);
+    if (on) engine.setInterval(loopIntervalRef.current);
+    setLoopOn(on);
+  }
+
+  function setGate(gate: LoopGate) {
+    loopEngine().setGate(gate);
+    setLoopGate(gate);
+  }
+
+  function setAskInterval(seconds: number) {
+    loopEngine().setInterval(seconds);
+    setLoopInterval(Math.min(15, Math.max(10, Math.round(seconds))));
+  }
+
+  function setHeld(held: boolean) {
+    const engine = loopEngine();
+    if (held) {
+      const current = latestCueRef.current;
+      if (current) engine.kill(current);
+      else engine.killed = true;
+    } else {
+      engine.release();
+    }
+    setLoopHeld(held);
+  }
+
+  function approveCue() {
+    const now = snapshotRef.current.signals.now;
+    if (loopEngine().approve(now)) setLoopPending(null);
+  }
+
+  function skipCue() {
+    if (loopEngine().skip()) setLoopPending(null);
+  }
+
+  async function startLoopDemo() {
+    const engine = loopEngine();
+    engine.release();
+    engine.setGate("auto");
+    engine.setInterval(loopIntervalRef.current);
+    engine.setEnabled(true);
+    setLoopHeld(false);
+    setLoopGate("auto");
+    setLoopOn(true);
+    setDemoCrowd(true);
+    setLoopPending(null);
+    await loadSample();
   }
 
   function enableOverride() {
@@ -715,10 +932,10 @@ export default function AeiStage() {
         <section className="mt-4" aria-label="Director">
           <p className="pg-label">Director</p>
           <p className="mt-1 text-xs leading-relaxed text-muted">
-            Rules drive the picture.
+            Rules drive every frame.
             {status == null ? " Checking providers…" : status.metaConfigured ? " Model key is present." : " Model key is not set, so providers stay on mock data."}
             {" "}
-            A model reply is written to the log and does not replace the rules.
+            The loop can change the picture when a reply arrives in time. The one-shot request stays in the log.
           </p>
           <ul className="mt-2 space-y-1 font-mono text-[10px] leading-relaxed text-[#d5ddd6]">
             {(status?.providers ?? []).map((provider) => (
@@ -741,20 +958,22 @@ export default function AeiStage() {
             {metaBusy ? "Asking…" : "Request Meta cue"}
           </button>
           {metaMessage ? <p className="mt-2 text-xs text-muted">{metaMessage}</p> : null}
-        </section>
-
-        <section className="mt-4" aria-label="Cue log">
-          <p className="pg-label">Cue log</p>
-          <ol className="mt-2 max-h-40 space-y-1.5 overflow-y-auto font-mono text-[10px] leading-relaxed text-[#d5ddd6]">
-            {log.length === 0 ? <li className="text-muted">Cues appear as the director commits to a look.</li> : null}
-            {log.map((cue) => (
-              <li key={cue.id}>
-                <span className="text-muted">{formatClock(cue.at)}</span> {cue.source} {aeiSceneById(cue.scene)?.name ?? cue.scene}{" "}
-                I{cue.intensity.toFixed(2)} S{cue.strobe.toFixed(2)}
-                {cue.asset ? ` ${cue.asset}` : ""}
-              </li>
-            ))}
-          </ol>
+          <DirectorPanel
+            enabled={loopOn}
+            gate={loopGate}
+            held={loopHeld}
+            interval={loopInterval}
+            pending={loopPending}
+            loopLog={loopLog}
+            ruleLog={log}
+            onEnabled={setLoopEnabled}
+            onGate={setGate}
+            onInterval={setAskInterval}
+            onApprove={approveCue}
+            onSkip={skipCue}
+            onHold={setHeld}
+            onDemo={() => void startLoopDemo()}
+          />
         </section>
       </aside>
     </main>
