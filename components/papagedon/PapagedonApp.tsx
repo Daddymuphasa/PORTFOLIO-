@@ -23,6 +23,7 @@ import WalletButton from "./WalletButton";
 import PaidCallPanel, { type IdentityStatus } from "./PaidCallPanel";
 import { CollapsibleSection } from "./ui/Collapsible";
 import { encodeWavMono16 } from "@/lib/aei/wav";
+import DepthStudio from "./DepthStudio";
 
 const DEMO_CYCLE_SECONDS = 20; // PAPAGEDON_DEMO_CYCLE in Runtime.cpp
 const LIVE_CLIP_SECONDS = 8;
@@ -79,6 +80,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
   const [shaderError, setShaderError] = useState<string | null>(null);
   const [autoCycle, setAutoCycle] = useState(false);
   const [hideUi, setHideUi] = useState(false);
+  const [depthStudioOpen, setDepthStudioOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const [source, setSource] = useState<AudioSourceKind | null>(null);
@@ -399,6 +401,18 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
             </CollapsibleSection>
 
             <CollapsibleSection
+              title="Depth Lab"
+              icon={<IconSpark />}
+              summary={<span>Still image · live depth & audio</span>}
+            >
+              <div className="pg-depth-launch-art pgx-depth-preview" aria-hidden="true"><span /><i /><b>DEPTH<br />SIGNAL</b></div>
+              <p className="pgx-hint mt-2">Turn a still into a living, audio-reactive scene. Drop in an image to start.</p>
+              <button type="button" className="pgx-seg-btn is-on mt-2 w-full justify-center" onClick={() => setDepthStudioOpen(true)}>
+                Open Depth Studio <span aria-hidden>↗</span>
+              </button>
+            </CollapsibleSection>
+
+            <CollapsibleSection
               title="Live signals"
               icon={<IconPulse />}
               summary={
@@ -429,6 +443,7 @@ function PapagedonStage({ identity }: { identity: IdentityStatus }) {
           </div>
         </div>
       </div>
+      {depthStudioOpen && <DepthStudio onClose={() => setDepthStudioOpen(false)} audio={{ bass: s.bass, energy: s.energy }} />}
     </div>
   );
 }
