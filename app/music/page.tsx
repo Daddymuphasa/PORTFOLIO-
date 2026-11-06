@@ -8,6 +8,21 @@ const platforms = [
   ["Audiomack", "Listen to Chaos & Order", "https://audiomack.com/daddy-muphasa/song/chaosandor", "audiomack"],
   ["Boomplay", "Listen to Chaos & Order", "https://www.boomplay.com/songs/EQtA6zEPu6jy75V_n3Io9fZk?srModel=COPYLINK&srList=WEB&share_content=music&share_channel=copylink&share_platform=web", "boomplay"],
 ];
+const damascusPlatforms = [
+  ["Spotify", "Stream DAMASCUS", "https://open.spotify.com/track/3xiRRRRnkfPyscmNafFccW", "spotify"],
+  ["Apple Music", "Stream DAMASCUS", "https://music.apple.com/ng/album/damascus/6827952018?i=6827952172", "apple"],
+  ["Audiomack", "Stream DAMASCUS", "https://audiomack.com/daddy-muphasa/song/damascus", "audiomack"],
+  ["YouTube Music", "Stream DAMASCUS", "https://music.youtube.com/watch?v=wd-ESUsSHS8", "youtube"],
+  ["YouTube", "Watch DAMASCUS", "https://www.youtube.com/watch?v=wd-ESUsSHS8", "youtube"],
+  ["Deezer", "Stream DAMASCUS", "https://www.deezer.com/track/4376427811", "deezer"],
+  ["TIDAL", "Stream DAMASCUS", "https://tidal.com/browse/track/573892686", "tidal"],
+  ["Amazon Music", "Stream DAMASCUS", "https://music.amazon.com/tracks/B0HPKN8RYF", "amazon"],
+  ["SoundCloud", "Stream DAMASCUS", "https://soundcloud.com/daddymuphasa-music/damascus", "soundcloud"],
+  ["Pandora", "Stream DAMASCUS", "https://www.pandora.com/artist/daddy-muphasa/damascus/damascus/TRzpgKvZ2KzZrjm", "pandora"],
+  ["Anghami", "Stream DAMASCUS", "https://play.anghami.com/song/1310428186", "anghami"],
+  ["iHeartRadio", "Play DAMASCUS", "https://www.iheart.com/artist/34081444/songs/443553490/", "iheartradio"],
+  ["KKBOX", "Stream DAMASCUS", "https://www.kkbox.com/tw/tc/song/5_7B-utDMf04hamJ2Z", "kkbox"],
+];
 const holyCloutPlatforms = [
   ["YouTube", "Watch HOLY CLOUT", "https://youtu.be/UyQ7TW-EY1I", "youtube"],
   ["Spotify", "Stream HOLY CLOUT", "https://open.spotify.com/track/4VblJpJMOhZoa0QorwWWkU?si=f4585149f84946f7", "spotify"],
@@ -34,6 +49,18 @@ export default function MusicPage() {
   return <main className="music-page">
     <header className="music-nav"><Link href="/" className="music-mark"><BrandLogo compact /></Link><span style={{ display:"flex", gap:"1.4rem" }}><Link href="/app">APP ↗</Link><Link href="/portfolio">PORTFOLIO ↗</Link></span></header>
     <div className="music-grid" aria-hidden />
+    <section className="music-release" aria-labelledby="damascus-title">
+      <div className="release-cover matrix-panel">
+        <div className="matrix-rain" aria-hidden>{Array.from({ length: 18 }, (_, index) => <span key={index}>01 ᛉ 10 ∴ 11 ◇ 00 ᚠ 01 10</span>)}</div>
+        <div className="matrix-seal" aria-hidden>✦</div>
+        <img src="/damascus.jpg" alt="DAMASCUS cover art" />
+      </div>
+      <div className="release-info"><p className="release-kicker">DADDY MUPHASA · OUT NOW</p><h1 id="damascus-title" style={{ fontSize:"clamp(3rem,6vw,6.2rem)" }}>DAMAS<em>CUS</em></h1><p className="release-description">The new single from Daddy Muphasa. Stream DAMASCUS everywhere. <strong>(Acts 9:1–19)</strong></p>
+        <p className="platforms-label">STREAM THE NEW SINGLE</p>
+        <div className="platforms sm:grid-cols-2">{damascusPlatforms.map(([name, caption, href, kind]) => <a key={name} className={`platform ${kind}`} href={href} target="_blank" rel="noreferrer"><strong>{name}</strong><span>{caption}</span><b>↗</b></a>)}</div>
+        <div className="music-socials"><a href="https://ditto.fm/damascus-daddy-muphasa" target="_blank" rel="noreferrer">ALL PLATFORMS ↗</a></div>
+      </div>
+    </section>
     <section className="holy-feature" aria-labelledby="holy-feature-title">
       <div className="holy-feature-glow" aria-hidden />
       <div className="holy-feature-art group relative">
