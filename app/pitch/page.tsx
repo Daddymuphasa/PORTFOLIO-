@@ -36,7 +36,7 @@ const tech = [
 
 const deals: { client: string; tag?: string; event: string; venue?: string; date: string; amount: string }[] = [
   { client: "Amapiano District", event: "3rd Anniversary Party", venue: "Maradiva Twin Waters, Lekki, Lagos", date: "Fri 14 Nov 2025", amount: "NGN 1.3M" },
-  { client: "DJ Badman", event: "Badman Experience 4.0", date: "", amount: "NGN 1M" },
+  { client: "DJ Badman", event: "Badman Experience 4.0", date: "Fri 7 Aug 2026", amount: "NGN 1M" },
   { client: "DJ Badman", event: "Trance by DJ Badman", date: "", amount: "NGN 300K" },
   { client: "DJ Badman x Gold Rhino Hotel", tag: "Upcoming / booked", event: "Scheduled event", date: "Dec 2026", amount: "NGN 500K" },
   { client: "Southeast Blockchain Games Week", event: "Event media", date: "Sep 2026", amount: "NGN 500K" },
